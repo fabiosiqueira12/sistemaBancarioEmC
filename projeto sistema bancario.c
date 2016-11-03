@@ -529,9 +529,9 @@ int pegou = 0;
 system("cls");
 
 printf("\n Digite O Valor A Ser Depositado : ");
-scanf("%d", valor);
+scanf("%d", &valor);
 printf("\n Digite O Número Da Conta A Ser Depositada: ");
-scanf("%i", numConta);
+scanf("%i", &numConta);
 int i;
 for (i = 0;i < 2; i++){
     if (pessoas[i].conta.numeroConta == numConta){
