@@ -1,3 +1,7 @@
 links :
 
 http://blockofcodes.blogspot.com.br/2013/06/how-to-change-text-color-of-cc-console.html
+
+http://www.cprogressivo.net/
+
+http://www.redutonerd.com/2013/01/tutorial-desativando-o-botao-x-fechar.html

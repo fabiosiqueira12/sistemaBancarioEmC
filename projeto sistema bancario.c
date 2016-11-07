@@ -14,7 +14,7 @@ typedef struct Sconta{
     int operacao;
     long numeroConta;
     long senha;
-    double saldo;
+    float saldo;
     double ultimosSaques[5];
     double ultimosDepositos[5];
     double ultimasTransferencias[5];
@@ -32,7 +32,7 @@ typedef struct SPessoa{
 /* Fim Declaração Structs */
 
 //Declaração de váriaveis globais
-int numeroConta;
+
 TPessoa pessoas[2];
 FILE *file;
 int contador = 0;
@@ -48,10 +48,12 @@ void acessarSistema();
 void sair();
 void menuDeAcesso(TPessoa pessoa);
 void loginSistema();
+void menuMais(TPessoa pessoa);
 //Função de CRUD
 
 void cadastrarUsuario();
 void editarUsuario(TPessoa pessoa);
+void verInformacoes(TPessoa pessoa);
 
 //Funções Do Caixa
 
@@ -146,6 +148,7 @@ switch(opc)
 
 //Função Para Verificar Se Conta Existe
 void loginSistema(){
+    int numeroConta;
     int usuarioValido = 0;
     int numeroTentativas = 5;
      system("cls");
@@ -190,7 +193,7 @@ void loginSistema(){
 
     }
 
-    printf("\nQuantidade de tentativas Esgotadas, Tente fazer o cadastro \n");
+    printf("\nQuantidade de tentativas Esgotadas, Tente Novamente Ou Faça O Cadastro \n");
     system("pause");
     acessarSistema();
 
@@ -216,8 +219,9 @@ printf("\n2- Extrato");
 printf("\n3- Saque");
 printf("\n4- Depósito");
 printf("\n5- Transferência");
-printf("\n6- Editar Informações");
-printf("\n7- Sair Do Sistema\n");
+printf("\n6- Mais");
+printf("\n7- Menu Principal ");
+printf("\n8- Sair Do Sistema\n");
 printf("\n\nDigite uma opção: ");
 fflush(stdin);
 scanf("%i",&opc);
@@ -239,19 +243,57 @@ switch(opc)
         transferencia(pessoa);
         break;
     case 6:
-        editarUsuario( pessoa);
+        menuMais(pessoa);
         break;
 
     case 7:
+        acessarSistema();
+
+        break;
+
+    case 8:
         sair();
         break;
+
     default:
         printf("Opção invalida!\n");
+        system("pause");
+        menuDeAcesso(pessoa);
+        break;
+}
+
+}
+
+void menuMais(TPessoa pessoa){
+system("color 3f");
+system("cls");
+int opc;
+printf("\n---------------------------------------------------\n\n");
+printf("1- Ver Informações Do Usuário");
+printf("\n2- Editar Informações Do Usuário");
+printf("\n3- Voltar ");
+printf("\n\nDigite uma opção: ");
+fflush(stdin);
+scanf("%i",&opc);
+switch(opc)
+{
+    case 1:
+        verInformacoes(pessoa);
+        break;
+    case 2:
+        editarUsuario(pessoa);
+        break;
+    case 3:
+        menuDeAcesso(pessoa);
+        break;
+    default :
+        printf("\n Opção Inválida, Digite uma das opções disponíveis\n");
     system("pause");
-    menuDeAcesso(pessoa);
+    menuMais(pessoa);
     break;
 }
-}
+
+}//Fim Metodo
 
 void sair(){
 
@@ -261,55 +303,93 @@ printf("\n\t Até Breve \n\n");
 exit(0);
 system("pause");
 
-}
+}//Fim Metodo
 
 
 
 void cadastrarUsuario(){
+
 TPessoa pessoa;
 
 system("cls");
 
 if (contador < 2 ){
 
+
+do {
 printf("\n\n Digite O Nome Do Usuário : ");
 fflush(stdin);
 gets(pessoa.nome);
+
+if (strlen(pessoa.nome) != 0){
+
+
+}else {
+    printf("\n Digite Algo Para Nome \n");
+    system("pause");
+    system("cls");
+}
+
+}while (strlen(pessoa.nome) == 0);
+
+
+do {
 
 printf("\n\n Digite O Número Do Cpf : ");
 fflush(stdin);
 gets(pessoa.cpf);
 
+if (strlen(pessoa.cpf) != 0){
+
+    if (strlen(pessoa.cpf) == 14){
+
+    }else {
+        printf("\n Digite apenas 14 digitos \n");
+        system("pause");
+        system("cls");
+    }
+
+}else {
+    printf("\n Digite algo Para O CPF !! \n");
+    system("pause");
+    system("cls");
+
+
+
+}
+
+}while(strlen(pessoa.cpf) < 14);
+
+
 printf("\n\n Escolha O Sexo M / F : ");
 fflush(stdin);
-scanf("%c",&pessoa.sexo);
-if (pessoa.sexo != "m" || pessoa.sexo != "f"){
-        printf("\n Opção Inválida Digite m ou f\n");
-}
+gets(pessoa.sexo);
 
 printf("\n\n Digite Sua Idade : ");
 fflush(stdin);
-scanf("%i",&pessoa.idade);
+scanf("%d",&pessoa.idade);
+
 
 printf("\n\n Digite A Agencia : ");
 fflush(stdin);
-scanf("%i", &pessoa.conta.agencia);
+scanf("%d", &pessoa.conta.agencia);
+
 
 printf("\n\n Digite A Operacao : ");
 fflush(stdin);
-scanf("%i", &pessoa.conta.operacao);
+scanf("%d", &pessoa.conta.operacao);
+
 
 printf("\n\n Digite o número da conta : ");
 fflush(stdin);
-scanf("%i",&pessoa.conta.numeroConta);
+scanf("%d",&pessoa.conta.numeroConta);
+
 
 printf("\n\n Digite A Senha : ");
 fflush(stdin);
 scanf("%i", &pessoa.conta.senha);
 
 pessoa.conta.saldo = 100.0;
-
-printf("%d",pessoa.conta.saldo);
 
 printf("\nUsuário Cadastrado com sucesso, Você já pode acessar o sistema\n");
 pessoas[contador] = pessoa;
@@ -318,10 +398,19 @@ contador++;
 system("pause");
 acessarSistema();
 
-}
+} //Fim Metodo
 
 void editarUsuario(TPessoa pessoa){
     int opcao;
+    long senha;
+    char cpfAux[15];
+    char novoNome[70];
+    char novoCpf[15];
+    char novoSexo[1];
+    int novaIdade;
+    long novaSenha;
+
+
 
     system("cls");
     printf("\n\n\t\t\t Opcões De Edição \n");
@@ -329,7 +418,8 @@ void editarUsuario(TPessoa pessoa){
     printf("\n2- CPF ");
     printf("\n3- Sexo  ");
     printf("\n4- Idade ");
-    printf("\n5- Sair ");
+    printf("\n5- Senha ");
+    printf("\n6- Voltar ");
 
 
     printf("\n\n Digite Uma Opção: ");
@@ -342,35 +432,199 @@ void editarUsuario(TPessoa pessoa){
     case 1:
 
         system("cls");
-        system("pause");
-        menuDeAcesso(pessoa);
+
+        printf("\nDigite Um Novo Nome : ");
+        fflush(stdin);
+        gets(novoNome);
+
+        printf("\n Digite A Senha Para Confirmar : ");
+        fflush(stdin);
+        scanf("%i",&senha);
+
+        if (pessoa.conta.senha == senha){
+
+            int i;
+            for (i = 0; i < 2 ; i++){
+
+                if (pessoa.conta.senha == pessoas[i].conta.senha){
+                    strcpy(pessoa.nome, novoNome);
+                    strcpy(pessoas[i].nome, novoNome);
+                    printf("\n Nome Atualizado \n");
+                    printf("Novo Nome é: %s \n",pessoas[i].nome);
+                    system("pause");
+                    editarUsuario(pessoa);
+
+                }
+
+            }
+
+        }else {
+            printf("\n Senha Incorreta, Tente Novamente \n");
+            system("pause");
+            editarUsuario(pessoa);
+
+        }
 
         break;
+
     case 2:
 
         system("cls");
-        system("pause");
-        menuDeAcesso(pessoa);
+
+        printf("\nDigite novo CPF : ");
+        fflush(stdin);
+        gets(novoCpf);
+
+        printf("\n Digite A Senha Para Confirmar : ");
+        fflush(stdin);
+        scanf("%i",&senha);
+
+        if (pessoa.conta.senha == senha){
+
+            int i;
+            for (i = 0; i < 2 ; i++){
+
+                if (pessoa.conta.senha == pessoas[i].conta.senha){
+                    strcpy(pessoa.cpf, novoCpf);
+                    strcpy(pessoas[i].cpf, novoCpf);
+                    printf("\n CPF Atualizado \n");
+                    printf("Novo CPF é: %s \n",pessoas[i].cpf);
+                    system("pause");
+                    editarUsuario(pessoa);
+
+                }
+
+            }
+
+        }else {
+            printf("\n Senha Incorreta, Tente Novamente \n");
+            system("pause");
+            editarUsuario(pessoa);
+
+        }
 
         break;
+
     case 3:
 
         system("cls");
-        system("pause");
-        menuDeAcesso(pessoa);
+
+        printf("\n Escolha O Sexo M / F : ");
+        fflush(stdin);
+        gets(novoSexo);
+
+        printf("\n Digite A Senha Para Confirmar : ");
+        fflush(stdin);
+        scanf("%i",&senha);
+
+        if (pessoa.conta.senha == senha){
+
+            int i;
+            for (i = 0; i < 2 ; i++){
+
+                if (pessoa.conta.senha == pessoas[i].conta.senha){
+                    strcpy(pessoa.sexo, novoSexo);
+                    strcpy(pessoas[i].sexo, novoSexo);
+                    printf("\n Sexo Atualizado \n");
+                    system("pause");
+                    editarUsuario(pessoa);
+
+                }
+
+            }
+
+        }else {
+            printf("\n Senha Incorreta, Tente Novamente \n");
+            system("pause");
+            editarUsuario(pessoa);
+
+        }
 
         break;
+
     case 4:
 
         system("cls");
-        system("pause");
-        menuDeAcesso(pessoa);
+
+        printf("\n Digite A Nova Idade : ");
+        fflush(stdin);
+        scanf("%d",&novaIdade);
+
+        printf("\n Digite A Senha Para Confirmar : ");
+        fflush(stdin);
+        scanf("%i",&senha);
+
+        if (pessoa.conta.senha == senha){
+
+            int i;
+            for (i = 0; i < 2 ; i++){
+
+                if (pessoa.conta.senha == pessoas[i].conta.senha){
+                    pessoa.idade = novaIdade;
+                    pessoas[i].idade = novaIdade;
+                    printf("\n Idade Atualizada \n");
+                    printf("Nova Idade é: %i \n",pessoas[i].idade);
+                    system("pause");
+                    editarUsuario(pessoa);
+
+                }
+
+            }
+
+        }else {
+            printf("\n Senha Incorreta, Tente Novamente \n");
+            system("pause");
+            editarUsuario(pessoa);
+
+        }
 
         break;
+
+
     case 5:
+
         system("cls");
-        menuDeAcesso(pessoa);
+        printf("\nDigite Sua Senha Nova : ");
+        fflush(stdin);
+        scanf("%i", &novaSenha);
+
+        printf("Digite Seu CPF para Confimar : ");
+        fflush(stdin);
+        gets(cpfAux);
+        printf(cpfAux);
+        printf(pessoa.cpf);
+
+        if (strcmp(pessoa.cpf , cpfAux) == 0 ) {
+
+               int i;
+               for (i = 0; i < 2 ; i++){
+
+                    if (pessoa.conta.numeroConta == pessoas[i].conta.numeroConta){
+                        pessoa.conta.senha = novaSenha;
+                        pessoas[i].conta.senha = novaSenha;
+
+                        printf("\nSenha Atualizada Com Sucesso !\n");
+                        system("pause");
+                        editarUsuario(pessoa);
+                    }
+
+               }
+
+        }else {
+
+            printf("\nCpf Incorreto , Tente Novamente !!!\n");
+            system("pause");
+            editarUsuario(pessoa);
+
+        }
+
+
+
         break;
+
+    case 6:
+        system("cls");
+        menuMais(pessoa);
     default :
         printf("Opcão Inválida \n");
         system("pause");
@@ -380,7 +634,24 @@ void editarUsuario(TPessoa pessoa){
 
 
 
-}
+}//Fim Metodo
+
+void verInformacoes(TPessoa pessoa){
+
+    system("cls");
+
+    printf("\n Informações Do Usuário \n");
+    printf("\n---------------------------------------------------\n\n");
+    printf ("\t\t Nome : %s", pessoa.nome);
+    printf("\n\t\t CPF : %s", pessoa.cpf);
+    printf("\n\t\t Sexo : %s", pessoa.sexo);
+    printf("\n\t\t Idade : %d Anos", pessoa.idade);
+    printf("\n---------------------------------------------------\n\n");
+    system("pause");
+
+    menuMais(pessoa);
+
+}//Fim Metodo
 
 void versaldo(TPessoa pessoa){
 
@@ -391,9 +662,21 @@ void versaldo(TPessoa pessoa){
  scanf("%i",&senha);
 
  if (pessoa.conta.senha == senha){
-    printf("\n Seu Saldo é :  R$ %d\n",pessoa.conta.saldo);
-    system("Pause");
-    menuDeAcesso(pessoa);
+
+    int i;
+    for (i = 0;i < 2 ; i++)
+    {
+        if (pessoas[i].conta.senha == pessoa.conta.senha){
+
+            printf("\n Seu Saldo é :  R$ %.2f\n",pessoas[i].conta.saldo);
+            system("Pause");
+            menuDeAcesso(pessoa);
+
+        }
+
+    }
+
+
  }else{
 
      printf("\nSenha Incorreta !!\n");
@@ -402,41 +685,58 @@ void versaldo(TPessoa pessoa){
 
  }
 
-}
+}//Fim Metodo
 
 
 void saque(TPessoa pessoa){
 
-double valor;
+float valor;
 int senha;
 
 system("cls");
- printf("\nDigite O Valor A Ser Sacado(casa de 10): ");
- scanf("%d",&valor);
+ printf("\nDigite O Valor A Ser Sacado : ");
+ scanf("%f",&valor);
+
+ if (valor <= 0 ){
+    printf("\n O Valor Tem Que Ser Maior Que Zero \n");
+    system("pause");
+    saque(pessoa);
+ }
+
 
  printf("\nDigite Sua Senha : ");
  scanf("%i",&senha);
 
  if (pessoa.conta.senha == senha){
 
-    if (pessoa.conta.saldo > valor){
+    int i;
+    for (i = 0; i <2; i++)
+    {
+        if (pessoa.conta.senha == pessoas[i].conta.senha){
+
+                if (pessoas[i].conta.saldo > valor){
 
         printf("\nValor Sacado Com Sucesso\n");
-        double valorNovo = pessoa.conta.saldo - valor;
-        pessoa.conta.saldo = valorNovo;
+        float valorNovo = pessoas[i].conta.saldo - valor;
+        pessoas[i].conta.saldo = valorNovo;
 
-        printf("\nSeu Novo Saldo é :  R$ %d \n",pessoa.conta.saldo);
+        printf("\nSeu Novo Saldo é :  R$ %.2f \n",pessoas[i].conta.saldo);
         system("pause");
         menuDeAcesso(pessoa);
 
     }else {
 
     printf("\n Saldo insuficiente para realizar o saque\n");
-    printf("Seu Saldo é : R$ %d \n",pessoa.conta.saldo);
+    printf("Seu Saldo é : R$ %.2f \n",pessoas[i].conta.saldo);
     system("pause");
     menuDeAcesso(pessoa);
 
     }
+
+        }
+    }
+
+
 
  }else{
 
@@ -446,70 +746,34 @@ system("cls");
 
  }
 
-}
+}//Fim Metodo
 
 
 void extrato (TPessoa pessoa){
 
 long senha;
-int tamanhoUltimosSaques = sizeof(pessoa.conta.ultimosSaques) /sizeof(pessoa.conta.ultimosSaques[0]);
-int tamanhoUltimasTransferencias = sizeof(pessoa.conta.ultimasTransferencias) /sizeof(pessoa.conta.ultimasTransferencias[0]);
-int tamanhoUltimosDepositos  = sizeof(pessoa.conta.ultimosDepositos) /sizeof(pessoa.conta.ultimosDepositos[0]);
-
 
 system("cls");
 printf("\n Digite Sua Senha: ");
 scanf("%i",&senha);
 
 if (pessoa.conta.senha == senha){
-    system("cls");
-    printf("\n ----------------------------------- \n");
-    if (tamanhoUltimosSaques != 0){
-        printf("\n Últimos Saques \n");
 
-        int i;
-        for (i = 0; i < tamanhoUltimosSaques; i++){
+	int i;
+	for (i =0; i < 2 ; i++){
 
-        }
+		if (pessoas[i].conta.senha == pessoa.conta.senha){
 
-    }else {
+			system("cls");
+     		system("pause");
+     		menuDeAcesso(pessoa);
 
-        printf("\n Não Foi Feito Saques Ainda ");
 
-    }
+		}
 
-    printf("\n ----------------------------------- \n");
-    if (tamanhoUltimasTransferencias != 0){
-        printf("\n Últimas Transferências \n");
+	}
 
-        int i;
-        for (i = 0; i < tamanhoUltimasTransferencias; i++){
 
-        }
-
-    }else {
-
-        printf("\n Não Foi Feito Transferências Ainda ");
-
-    }
-
-    printf("\n ----------------------------------- \n");
-    if (tamanhoUltimosDepositos != 0){
-        printf("\n Últimos Depositos \n");
-
-        int i;
-        for (i = 0; i < tamanhoUltimosDepositos; i++){
-
-        }
-
-    }else {
-
-        printf("\n Não Foi Feito Depositos Ainda ");
-
-    }
-     printf("\n ----------------------------------- \n");
-     system("pause");
-     menuDeAcesso(pessoa);
 }else{
 
     printf("\n Senha Incorreta \n");
@@ -519,23 +783,41 @@ if (pessoa.conta.senha == senha){
 }
 
 
-}
+}//Fim Metodo
 
 void deposito(TPessoa pessoa){
+
 long numConta;
-double valor;
+float valor;
+float valorAux = 0;
 int pegou = 0;
 
 system("cls");
 
 printf("\n Digite O Valor A Ser Depositado : ");
-scanf("%d", &valor);
+fflush(stdin);
+scanf("%f", &valor);
+
+if (valor <= 0){
+    printf("\n O Valor Tem Que Ser Maior que zero \n");
+    system("pause");
+    deposito(pessoa);
+
+
+}else {
+
 printf("\n Digite O Número Da Conta A Ser Depositada: ");
+fflush(stdin);
 scanf("%i", &numConta);
 int i;
 for (i = 0;i < 2; i++){
     if (pessoas[i].conta.numeroConta == numConta){
-        pessoas[i].conta.saldo = pessoas[i].conta.saldo + valor;
+
+        valorAux = pessoas[i].conta.saldo + valor;
+
+
+        pessoas[i].conta.saldo = valorAux;
+
         pegou = 1;
     }
 }
@@ -555,72 +837,98 @@ menuDeAcesso(pessoa);
 
 }
 
+}//Fim Metodo
+
 void transferencia(TPessoa pessoa){
+
 system("cls");
-double valor;
+float valor;
 long numConta;
 long senha;
 int pegou = 0;
 
 printf("\n Digite O Valor A Ser Transferindo : ");
-scanf("%d",&valor);
+scanf("%f",&valor);
+
+if (valor <= 0) {
+    printf("\n Valor Tem Que Ser Maior Que Zero \n");
+    system("pause");
+    transferencia(pessoa);
+}else {
+
 printf("\n Digite A Conta Onde O Valor Será Transferido: ");
 scanf("%i", &numConta);
 
-printf("\n Digite Sua Senha: ");
-scanf("%i", &senha);
-
 if (numConta == pessoa.conta.numeroConta){
-    system("cls");
-    printf("\n Conta Não Pode Ser Igual A Sua !!!\n");
+    printf("\n Não Pode Ser A Mesma Conta \n");
     system("pause");
     menuDeAcesso(pessoa);
 }else {
 
-if (pessoa.conta.senha == senha ){
+    printf("\n Digite A Senha: ");
+    scanf("%i", &senha);
 
-        if (pessoa.conta.saldo > valor){
+    if (pessoa.conta.senha == senha){
+        system("cls");
+        int i;
+        for (i = 0;i < 2; i++){
 
-            int i;
-            for (i = 0; i < 2; i++){
+            if (pessoas[i].conta.senha == pessoa.conta.senha){
 
-                if (pessoas[i].conta.numeroConta == numConta){
-                    double saldoFinal = pessoa.conta.saldo - valor;
-                    pessoa.conta.saldo = saldoFinal;
+                if (pessoas[i].conta.saldo > valor){
 
-                    pessoas[i].conta.saldo = pessoas[i].conta.saldo + valor;
-                    pegou = 1;
+                    int j;
+                    for (j = 0;j < 2 ; j++){
+
+                        if (pessoas[j].conta.numeroConta == numConta){
+
+                           pessoas[i].conta.saldo = pessoas[i].conta.saldo - valor;
+                           pessoas[j].conta.saldo = pessoas[j].conta.saldo + valor;
+
+                           pegou = 1;
+
+                        }
+
+                    }
+
+                    if (pegou == 1){
+                          printf("\n A transferência foi realizada com sucesso \n");
+                               system("pause");
+                               menuDeAcesso(pessoa);
+                    }else {
+
+                        printf("\n Não Existe Essa Conta Cadastrada !! \n");
+                        system("pause");
+                        menuDeAcesso(pessoa);
+                    }
+
+                }else {
+
+                    printf("\n Saldo Insuficiente \n");
+                    printf("Seu Saldo é %.2f \n",pessoas[i].conta.saldo);
+                    system("pause");
+                    menuDeAcesso(pessoa);
 
                 }
 
             }
 
-            if (pegou == 1){
-                printf("\n Transação Realizada Com Sucesso \n");
-                system("pause");
-                menuDeAcesso(pessoa);
-            }else {
-                printf("\n Número Da Conta Não foi Encontrada \n");
-                system("pause");
-                menuDeAcesso(pessoa);
-            }
-
-        }else {
-            printf("\n Saldo Insuficiente Para Efetuar Ação \n");
-            printf(" Seu Saldo é : R$ %d \n",pessoa.conta.saldo);
-            system("pause");
-            menuDeAcesso(pessoa);
         }
 
-}else {
-    printf("\n Senha Incorreta Tente Realizar Novamente \n");
-    system("pause");
-    menuDeAcesso(pessoa);
-}
+    }else {
+        printf("\n Senha Incorreta!! \n");
+        system("pause");
+        menuDeAcesso(pessoa);
+    }
+
 
 }
 
 }
+
+
+}//Fim Metodo
+
 
 
 
