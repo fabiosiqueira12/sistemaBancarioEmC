@@ -9,15 +9,40 @@
 
 /*Declaração de structs*/
 
+typedef struct SUltimosSaques {
+	
+	float valor;
+	char  data;
+	char  hora;
+
+} TUltimosSaques;
+
+typedef struct SUltimosDepositos {
+	
+	float valor;
+	char  data;
+	char  hora;
+	
+} TUltimosDepositos;
+
+typedef struct STransferencias {
+	
+	float valor;
+	char data;
+	char hora;
+	long numeroContaPessoaEnviou;
+	
+} TUltimasTransferencias;
+
 typedef struct Sconta{
     int agencia;
     int operacao;
     long numeroConta;
     long senha;
     float saldo;
-    double ultimosSaques[5];
-    double ultimosDepositos[5];
-    double ultimasTransferencias[5];
+    TUltimosSaques ultimosSaques[5];
+    TUltimosDepositos ultimosDepositos[5];
+    TUltimasTransferencias ultimasTransferencias[5];
 
 } TConta;
 
@@ -61,6 +86,7 @@ void versaldo(TPessoa pessoa);
 void saque(TPessoa pessoa);
 void extrato (TPessoa pessoa);
 void deposito (TPessoa pessoa);
+void depositoAnonimo();
 void transferencia(TPessoa pessoa);
 
 /* Fim Declaração Funções */
@@ -122,7 +148,8 @@ printf("\n\n\t\t\t MENU\n\n");
 printf("\n---------------------------------------------------\n");
 printf("1- Acesso do usuário");
 printf("\n2- Cadastrar Novo Usuário");
-printf("\n3- Sair ");
+printf("\n3- Depositar ");
+printf("\n4- Sair ");
 printf("\n\nDigite uma opção: ");
 fflush(stdin);
 scanf("%i",&opc);
@@ -135,8 +162,11 @@ switch(opc)
         cadastrarUsuario();
         break;
     case 3:
-        sair();
+        depositoAnonimo();
         break;
+	case 4:
+		sair();
+		break;
     default :
         printf("\n Opção Inválida, Digite uma das opções disponíveis\n");
     system("pause");
@@ -806,6 +836,61 @@ if (valor <= 0){
 
 }else {
 
+
+int i;
+for (i = 0;i < 2; i++){
+    if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta){
+
+        valorAux = pessoas[i].conta.saldo + valor;
+
+
+        pessoas[i].conta.saldo = valorAux;
+        
+        pessoa.conta.saldo = valorAux ; 
+
+        pegou = 1;
+    }
+}
+
+if (pegou == 1){
+    printf("\nDeposito Realizado Com Sucesso \n");
+    printf("\n Seu novo Saldo é : %.2f \n", pessoa.conta.saldo);
+    system("pause");
+    menuDeAcesso(pessoa);
+
+}else{
+
+printf("\n Conta Não Tá Cadastrada No Sistema \n");
+system("pause");
+menuDeAcesso(pessoa);
+
+}
+
+}
+
+}//Fim Metodo
+
+void depositoAnonimo(){
+	
+long numConta;
+float valor;
+float valorAux = 0;
+int pegou = 0;
+
+system("cls");
+
+printf("\n Digite O Valor A Ser Depositado : ");
+fflush(stdin);
+scanf("%f", &valor);
+
+if (valor <= 0){
+    printf("\n O Valor Tem Que Ser Maior que zero \n");
+    system("pause");
+    depositoAnonimo();
+
+
+}else {
+
 printf("\n Digite O Número Da Conta A Ser Depositada: ");
 fflush(stdin);
 scanf("%i", &numConta);
@@ -825,16 +910,16 @@ for (i = 0;i < 2; i++){
 if (pegou == 1){
     printf("\nDeposito Realizado Com Sucesso \n");
     system("pause");
-    menuDeAcesso(pessoa);
+    acessarSistema();
 
 }else{
 
 printf("\n Conta Não Tá Cadastrada No Sistema \n");
 system("pause");
-menuDeAcesso(pessoa);
+acessarSistema();
 
 }
-
+	
 }
 
 }//Fim Metodo
