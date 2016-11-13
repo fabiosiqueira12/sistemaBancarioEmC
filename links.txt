@@ -5,3 +5,5 @@ http://blockofcodes.blogspot.com.br/2013/06/how-to-change-text-color-of-cc-conso
 http://www.cprogressivo.net/
 
 http://www.redutonerd.com/2013/01/tutorial-desativando-o-botao-x-fechar.html
+
+https://www.vivaolinux.com.br/dica/Funcoes-de-data-usando-time.h/

@@ -6,35 +6,37 @@
 #include<string.h>
 #include<conio.h>
 #include<windows.h>
+#include<time.h>
 
 /*Declaração de structs*/
 
 typedef struct SUltimosSaques {
 	
 	float valor;
-	char  data;
-	char  hora;
+	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
+	int estaIniciado;
 
-} TUltimosSaques;
+} TUltimosSaques;	
 
 typedef struct SUltimosDepositos {
 	
 	float valor;
-	char  data;
-	char  hora;
+	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
+	int estaIniciado;
 	
 } TUltimosDepositos;
 
 typedef struct STransferencias {
 	
 	float valor;
-	char data;
-	char hora;
-	long numeroContaPessoaEnviou;
+	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
+	char nomePessoaRecebeu[70];
+	int estaIniciado; 
 	
 } TUltimasTransferencias;
 
 typedef struct Sconta{
+	
     int agencia;
     int operacao;
     long numeroConta;
@@ -49,11 +51,12 @@ typedef struct Sconta{
 typedef struct SPessoa{
     char nome[70];
     char cpf[15];
-    char sexo[1];
+    char sexo[12];
     int idade;
     TConta conta;
 
 } TPessoa;
+
 /* Fim Declaração Structs */
 
 //Declaração de váriaveis globais
@@ -62,6 +65,9 @@ TPessoa pessoas[2];
 FILE *file;
 int contador = 0;
 TPessoa pessoaLogada;
+
+int tamanhoArrayExtrato = 5;
+
 /* Fim Declaração váriaveis globais */
 
 
@@ -84,16 +90,22 @@ void verInformacoes(TPessoa pessoa);
 
 void versaldo(TPessoa pessoa);
 void saque(TPessoa pessoa);
-void extrato (TPessoa pessoa);
+void menuExtrato (TPessoa pessoa);
 void deposito (TPessoa pessoa);
 void depositoAnonimo();
 void transferencia(TPessoa pessoa);
+void extratoDepositos(TPessoa pessoa);
+void extratoTransferencias(TPessoa pessoa);
+void extratoSaques(TPessoa pessoa);
+
 
 /* Fim Declaração Funções */
 
 //Main
 int main(){
+	
 
+		
     HWND hnd;
     HMENU menu;
     int i, j, cont;
@@ -261,7 +273,7 @@ switch(opc)
         versaldo(pessoa);
         break;
     case 2:
-        extrato(pessoa);
+        menuExtrato(pessoa);
     break;
     case 3:
         saque(pessoa);
@@ -719,6 +731,8 @@ void versaldo(TPessoa pessoa){
 
 
 void saque(TPessoa pessoa){
+	
+TUltimosSaques ultimosSaque;
 
 float valor;
 int senha;
@@ -749,6 +763,22 @@ system("cls");
         printf("\nValor Sacado Com Sucesso\n");
         float valorNovo = pessoas[i].conta.saldo - valor;
         pessoas[i].conta.saldo = valorNovo;
+        
+        struct tm *local;
+		time_t t;
+		
+		t= time(NULL);//Iniciando A Váriavel
+		local=localtime(&t);
+        
+        ultimosSaque.valor = valor;
+        ultimosSaque.dia = local->tm_mday; 
+		ultimosSaque.mes = local->tm_mon + 1;
+		ultimosSaque.ano = local->tm_year + 1900;
+		ultimosSaque.hora = local->tm_hour;
+		ultimosSaque.minuto = local->tm_min;
+		ultimosSaque.segundo = local->tm_sec;
+		
+		pessoas[i].conta.ultimosSaques[0] = ultimosSaque;
 
         printf("\nSeu Novo Saldo é :  R$ %.2f \n",pessoas[i].conta.saldo);
         system("pause");
@@ -779,44 +809,44 @@ system("cls");
 }//Fim Metodo
 
 
-void extrato (TPessoa pessoa){
-
-long senha;
-
-system("cls");
-printf("\n Digite Sua Senha: ");
-scanf("%i",&senha);
-
-if (pessoa.conta.senha == senha){
-
-	int i;
-	for (i =0; i < 2 ; i++){
-
-		if (pessoas[i].conta.senha == pessoa.conta.senha){
-
-			system("cls");
-     		system("pause");
-     		menuDeAcesso(pessoa);
-
-
-		}
-
+void menuExtrato (TPessoa pessoa){
+	int opcao;
+	
+	system("cls");
+	
+	printf("\n\n 1 - Últimos Depositos ");
+	printf ("\n 2 - Últimos Saques ");
+	printf("\n 3 - Últimas Transferências ");
+	printf("\n 4 - Voltar");
+	printf("\n Digite sua opção : ");
+	fflush(stdin);
+	scanf("%i",&opcao);
+	
+	switch(opcao){
+		
+		case 1:
+			extratoDepositos(pessoa);
+			break;
+		case 2:
+			extratoSaques(pessoa);
+			break;
+		case 3:
+			extratoTransferencias(pessoa);
+			break;
+		case 4:
+			menuDeAcesso(pessoa);
+			break;
+		default:
+			printf("\n Opção Inválida \n");
+			system("pause");
+			menuExtrato(pessoa);
 	}
-
-
-}else{
-
-    printf("\n Senha Incorreta \n");
-    system("pause");
-    menuDeAcesso(pessoa);
-
-}
 
 
 }//Fim Metodo
 
 void deposito(TPessoa pessoa){
-
+TUltimosDepositos ultimoDeposito;
 long numConta;
 float valor;
 float valorAux = 0;
@@ -843,12 +873,37 @@ for (i = 0;i < 2; i++){
 
         valorAux = pessoas[i].conta.saldo + valor;
 
-
         pessoas[i].conta.saldo = valorAux;
         
         pessoa.conta.saldo = valorAux ; 
 
+        struct tm *local;
+		time_t t;
+		
+		t= time(NULL);//Iniciando A Váriavel
+		local=localtime(&t);
+        
+        ultimoDeposito.valor = valor;
+        ultimoDeposito.dia = local->tm_mday; 
+		ultimoDeposito.mes = local->tm_mon + 1;
+		ultimoDeposito.ano = local->tm_year + 1900;
+		ultimoDeposito.hora = local->tm_hour;
+		ultimoDeposito.minuto = local->tm_min;
+		ultimoDeposito.segundo = local->tm_sec;
+		ultimoDeposito.estaIniciado = 1;
+		
+		int j;
+		for (j = 0;j < tamanhoArrayExtrato; j++){
+			
+			if(pessoas[i].conta.ultimosDepositos[j].estaIniciado == 0){
+				pessoas[i].conta.ultimosDepositos[j] = ultimoDeposito;	
+				break;	
+			}
+			
+		}
+		
         pegou = 1;
+        break;
     }
 }
 
@@ -904,6 +959,7 @@ for (i = 0;i < 2; i++){
         pessoas[i].conta.saldo = valorAux;
 
         pegou = 1;
+        break;
     }
 }
 
@@ -925,6 +981,7 @@ acessarSistema();
 }//Fim Metodo
 
 void transferencia(TPessoa pessoa){
+TUltimasTransferencias ultimaTransferencia;
 
 system("cls");
 float valor;
@@ -967,11 +1024,28 @@ if (numConta == pessoa.conta.numeroConta){
 
                         if (pessoas[j].conta.numeroConta == numConta){
 
-                           pessoas[i].conta.saldo = pessoas[i].conta.saldo - valor;
-                           pessoas[j].conta.saldo = pessoas[j].conta.saldo + valor;
+                           	pessoas[i].conta.saldo = pessoas[i].conta.saldo - valor;
+                           	pessoas[j].conta.saldo = pessoas[j].conta.saldo + valor;
+                           
+                           	struct tm *local;
+							time_t t;
+		
+							t= time(NULL);//Iniciando A Váriavel
+							local=localtime(&t);
+                           
+	                        ultimaTransferencia.valor = valor;
+	        				ultimaTransferencia.dia = local->tm_mday; 
+							ultimaTransferencia.mes = local->tm_mon + 1;
+			                ultimaTransferencia.ano = local->tm_year + 1900;
+			                ultimaTransferencia.hora = local->tm_hour;
+			                ultimaTransferencia.minuto = local->tm_min;
+			                ultimaTransferencia.segundo = local->tm_sec;
+			                strcpy(ultimaTransferencia.nomePessoaRecebeu , pessoas[j].nome);
+							   
+						   	pessoas[i].conta.ultimasTransferencias[0] = ultimaTransferencia;
 
                            pegou = 1;
-
+						   break;
                         }
 
                     }
@@ -1013,6 +1087,128 @@ if (numConta == pessoa.conta.numeroConta){
 
 
 }//Fim Metodo
+
+
+void extratoDepositos(TPessoa pessoa){
+	TUltimosDepositos aux;
+	
+
+	system("cls");
+	
+	printf("\n================== ÚLTIMOS DEPOSITOS ====================\n");
+	
+	int i;
+	for (i = 0 ; i  < 2 ; i++){
+		
+		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta){
+			
+			int j;
+			for (j = 0; j < tamanhoArrayExtrato ; j++) {
+				aux = pessoas[i].conta.ultimosDepositos[j];
+							
+				if (pessoas[i].conta.ultimosDepositos[j].estaIniciado != 0){
+				
+					printf ("\n Valor : %.2f  Data : %d/%d/%d    Hora : %d:%d:%d  teste : %i",aux.valor,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo,aux.estaIniciado);
+					
+				}
+			
+			}				
+	
+			break;
+		}
+		
+	}
+	
+	printf("\n\n========================================================\n");
+	
+	system("pause");
+	menuExtrato(pessoa);
+	
+}//Fim Método
+
+void extratoSaques(TPessoa pessoa){
+	TUltimosSaques aux;
+	
+
+	system("cls");
+	
+	printf("\n================== ÚLTIMOS SAQUES ====================\n");
+	
+	int i;
+	for (i = 0 ; i  < 2 ; i++){
+		
+		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta){
+			
+			int j;
+			
+			for (j = 0; j < tamanhoArrayExtrato ; j++) {
+				aux = pessoas[i].conta.ultimosSaques[j];
+				
+				
+				
+				if (aux.estaIniciado != 0 ){
+				
+				
+				printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",aux.valor,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo);
+				
+				}
+			
+			}				
+				
+				
+			break;
+		}
+		
+	}
+	
+	printf("\n\n========================================================\n");
+	
+	system("pause");
+	menuExtrato(pessoa);
+	
+}//Fim Método
+
+void extratoTransferencias(TPessoa pessoa){
+	TUltimasTransferencias aux;
+
+	system("cls");
+	
+	printf("\n================== ÚLTIMAS TRANSFERÊNCIAS ====================\n");
+	
+	int i;
+	for (i = 0 ; i  < 2 ; i++){
+		
+		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta){
+			
+			int j;
+			
+			for (j = 0; j < tamanhoArrayExtrato ; j++) {
+				aux = pessoas[i].conta.ultimasTransferencias[j];
+				
+				
+				
+				if ( aux.estaIniciado != 0 ){
+				
+				
+				printf ("\n Valor : %.2f para: %s   Data : %d/%d/%d    Hora : %d:%d:%d",aux.valor,aux.nomePessoaRecebeu,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo);
+				
+				}
+			
+			}				
+				
+				
+			break;
+		}
+		
+	}
+	
+	printf("\n\n======================================================\n");
+	
+	system("pause");
+	menuExtrato(pessoa);
+	
+}//Fim Método
+
 
 
 
