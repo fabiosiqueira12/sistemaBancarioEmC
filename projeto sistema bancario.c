@@ -1,12 +1,11 @@
 #define _WIN32_WINNT 0x0601
 
-#include<stdio.h>
-#include<stdlib.h>
-#include<locale.h>
-#include<string.h>
-#include<conio.h>
-#include<windows.h>
-#include<time.h>
+#include<stdio.h> //Lib básica
+#include<stdlib.h> //Lib Básica
+#include<locale.h> //Setar o local para português
+#include<string.h> //Lib básica
+#include<windows.h> //Lib para pegar funcões e menu do windows
+#include<time.h> //Lib para manipular data e hora
 
 /*Declaração de structs*/
 typedef struct SUltimosSaques
@@ -14,7 +13,7 @@ typedef struct SUltimosSaques
 
     float valor;
     int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
-    int estaIniciado; //Variável auxiliar para pecorrer nos arrays
+    int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
 
 } TUltimosSaques;
 
@@ -23,7 +22,7 @@ typedef struct SUltimosDepositos
 
     float valor;
     int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
-    int estaIniciado; //Variável auxiliar para pecorrer nos arrays
+    int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
 
 } TUltimosDepositos;
 
@@ -33,7 +32,7 @@ typedef struct STransferencias
     float valor;
     int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
     char nomePessoaRecebeu[70];
-    int estaIniciado; //Variável auxiliar para pecorrer nos arrays
+    int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
 
 } TUltimasTransferencias;
 
@@ -111,6 +110,7 @@ void extratoSaques(TPessoa pessoa);
 int main()
 {
 
+	//trecho de código para desabilitar o botão fechar do cmd
 
     HWND hnd;
     HMENU menu;
@@ -146,6 +146,7 @@ int main()
     if (j >= 0)
         RemoveMenu(menu, j, MF_BYPOSITION);
 
+	//trecho de código para desabilitar o botão fechar do cmd
 
     system("title SIMULADOR BANCO");
     system("color 8f");
