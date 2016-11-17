@@ -489,8 +489,13 @@ void cadastrarUsuario() {
 			fflush(stdin);
 			scanf("%d",&pessoa.conta.numeroConta);
 
-			if (pessoa.conta.numeroConta > 0) {
-
+			if (pessoa.conta.numeroConta <= 0) {
+				printf("\n Digite um valor maior que zero \n");
+				system("pause");
+				system("cls");
+				
+			} else {
+				
 				file = fopen("dados.txt","rb");
 
 				if (file != NULL) {
@@ -522,16 +527,11 @@ void cadastrarUsuario() {
 				}
 
 				fclose(file);
-
-
-			} else {
-				printf("\n Digite um valor maior que zero \n");
-				system("pause");
-				system("cls");
+				
 			}
 
 
-		} while(numerocontaValidar != 1);
+		} while(numerocontaValidar == 0);
 
 
 		do {
@@ -992,6 +992,7 @@ void menuExtrato (TPessoa pessoa) {
 
 void deposito(TPessoa pessoa) {
 	TUltimosDepositos ultimoDeposito;
+	TPessoa aux;
 	long numConta;
 	float valor;
 	float valorAux = 0;
@@ -1010,18 +1011,20 @@ void deposito(TPessoa pessoa) {
 
 
 	} else {
+		
+		file = abreArquivo('f');
 
+		fseek(file,inicioArquivo,SEEK_SET);
 
-		int i;
-		for (i = 0; i < 2; i++) {
-			if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta) {
+		while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
 
-				valorAux = pessoas[i].conta.saldo + valor;
+			if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
+				valorAux = aux.conta.saldo + valor;
 
-				pessoas[i].conta.saldo = valorAux;
-
-				pessoa.conta.saldo = valorAux ;
-
+				aux.conta.saldo = valorAux;
+				
+				pessoa.conta.saldo = valorAux;
+				
 				struct tm *local;
 				time_t t;
 
@@ -1042,23 +1045,32 @@ void deposito(TPessoa pessoa) {
 
 					if ( f == (tamanhoArrayExtrato - 1)) {
 
-						pessoas[i].conta.ultimosDepositos[4]= ultimoDeposito;
+						aux.conta.ultimosDepositos[4]= ultimoDeposito;
 						break;
 					} else {
 
-						if (pessoas[i].conta.ultimosDepositos[f].estaIniciado == 0) {
-							pessoas[i].conta.ultimosDepositos[f] = ultimoDeposito;
+						if (aux.conta.ultimosDepositos[f].estaIniciado == 0) {
+							aux.conta.ultimosDepositos[f] = ultimoDeposito;
 							break;
 						}
 
 					}
 
 				}
-
+				
+				
+				fseek(file,inicioArquivo,SEEK_SET);
+				
+				fwrite(&aux,sizeof(TPessoa),1,file);
+				
 				pegou = 1;
-				break;
+
 			}
+
 		}
+		
+		fecharArquivo(file);
+		
 
 		if (pegou == 1) {
 			printf("\nDeposito Realizado Com Sucesso \n");
