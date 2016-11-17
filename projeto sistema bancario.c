@@ -6,6 +6,8 @@
 #include<string.h> //Lib básica
 #include<windows.h> //Lib para pegar funcões e menu do windows
 #include<time.h> //Lib para manipular data e hora
+#define tamanhoArrayExtrato 5 //Variavel para acessar arrays de extrato dentro de pessoa
+#define inicioArquivo 0 //Para manipular as linhas do arquivo
 
 /*Declaração de structs*/
 typedef struct SUltimosSaques {
@@ -64,7 +66,6 @@ FILE *file;
 int contador = 0;
 TPessoa pessoaLogada;
 
-int tamanhoArrayExtrato = 5;
 
 /* Fim Declaração váriaveis globais */
 
@@ -100,7 +101,7 @@ void extratoSaques(TPessoa pessoa);
 
 //Funções para manipular arquivos
 
-FILE* abreArquivo(char modo); //Manipula O Arquivo dados.txt
+FILE* abreArquivo(char modo); //Manipula Um Arquivo dados.txt possibilidades modos = a = append + binario; w = write + binario; r = read + binario; 
 
 void fecharArquivo(FILE *arquivo);
 
@@ -108,7 +109,7 @@ void fecharArquivo(FILE *arquivo);
 
 //Main
 int main() {
-
+	
 	//trecho de código para desabilitar o botão fechar do cmd
 
 	HWND hnd;
@@ -582,7 +583,6 @@ void editarUsuario(TPessoa pessoa) {
 	char novoSexo[1];
 	int novaIdade;
 	long novaSenha;
-
 
 
 	system("cls");
@@ -1098,12 +1098,16 @@ void depositoAnonimo() {
 
 
 	} else {
-
+		
+		
 		printf("\n Digite O Número Da Conta A Ser Depositada: ");
 		fflush(stdin);
 		scanf("%i", &numConta);
 
 		file = abreArquivo('f');
+			
+			
+		fseek(file,inicioArquivo,SEEK_SET);
 
 		while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
 
@@ -1111,13 +1115,19 @@ void depositoAnonimo() {
 				valorAux = aux.conta.saldo + valor;
 
 				aux.conta.saldo = valorAux;
-
+				
+				fseek(file,inicioArquivo,SEEK_SET);
+				
 				fwrite(&aux,sizeof(TPessoa),1,file);
+				
 				pegou = 1;
 
 			}
 
 		}
+		
+		
+	
 
 		fecharArquivo(file);
 
@@ -1265,39 +1275,36 @@ void transferencia(TPessoa pessoa) {
 
 
 void extratoDepositos(TPessoa pessoa) {
-	TUltimosDepositos aux;
-
-
+	TUltimosDepositos ultimoDeposito;
+	TPessoa pessoaAux;
+	file = abreArquivo('r');
 	system("cls");
-
+	
 	printf("\n================== ÚLTIMOS DEPOSITOS ====================\n");
 
-	int i;
-	for (i = 0 ; i  < 2 ; i++) {
+		while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
 
-		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta) {
+				if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+					
+					int i;
+					for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ){
+						
+						ultimoDeposito = pessoaAux.conta.ultimosDepositos[i];
+						
+						if (ultimoDeposito.estaIniciado > 0){
+							printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
 
-			int j;
-			for (j = tamanhoArrayExtrato  - 1 ; j >= 0 ; j--) {
-				aux = pessoas[i].conta.ultimosDepositos[j];
-
-
-
-				if (aux.estaIniciado > 0 ) {
-
-
-					printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",aux.valor,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo);
-
+						}
+						
+					}
+					
+					
 				}
 
-			}
-
-			break;
 		}
 
-	}
-
 	printf("\n\n========================================================\n");
+	fecharArquivo(file);
 
 	system("pause");
 	menuExtrato(pessoa);
@@ -1305,41 +1312,35 @@ void extratoDepositos(TPessoa pessoa) {
 }//Fim Método
 
 void extratoSaques(TPessoa pessoa) {
-	TUltimosSaques aux;
-
-
+	TUltimosSaques ultimoSaque;
+	TPessoa pessoaAux;
+	file = abreArquivo('r');
 	system("cls");
-
+	
 	printf("\n================== ÚLTIMOS SAQUES ====================\n");
 
-	int i;
-	for (i = 0 ; i  < 2 ; i++) {
+		while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
 
-		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta) {
-
-			int j;
-
-			for (j = tamanhoArrayExtrato  - 1 ; j >= 0 ; j--) {
-				aux = pessoas[i].conta.ultimosSaques[j];
-
-
-
-				if (aux.estaIniciado > 0 ) {
-
-
-					printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",aux.valor,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo);
-
+				if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+					
+					int i;
+					for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ){
+						
+						ultimoSaque = pessoaAux.conta.ultimosSaques[i];
+						
+						if (ultimoSaque.estaIniciado > 0){
+							printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+						}
+						
+					}
+					
+					
 				}
 
-			}
-
-
-			break;
 		}
 
-	}
-
 	printf("\n\n========================================================\n");
+	fecharArquivo(file);
 
 	system("pause");
 	menuExtrato(pessoa);
@@ -1347,41 +1348,35 @@ void extratoSaques(TPessoa pessoa) {
 }//Fim Método
 
 void extratoTransferencias(TPessoa pessoa) {
-	TUltimasTransferencias aux;
-
+	TUltimasTransferencias ultimasTransferencias;
+	TPessoa pessoaAux;
+	file = abreArquivo('r');
 	system("cls");
-
+	
 	printf("\n================== ÚLTIMAS TRANSFERÊNCIAS ====================\n");
 
-	int i;
-	for (i = 0 ; i  < 2 ; i++) {
+		while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
 
-		if (pessoas[i].conta.numeroConta == pessoa.conta.numeroConta) {
-
-			int j;
-
-			for (j = tamanhoArrayExtrato  - 1 ; j >= 0 ; j--) {
-				aux = pessoas[i].conta.ultimasTransferencias[j];
-
-
-
-				if ( aux.estaIniciado != 0 ) {
-
-
-					printf ("\n Valor : %.2f para: %s   Data : %d/%d/%d    Hora : %d:%d:%d",aux.valor,aux.nomePessoaRecebeu,aux.dia,aux.mes,aux.ano,aux.hora,aux.minuto,aux.segundo);
-
+				if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+					
+					int i;
+					for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ){
+						
+						ultimasTransferencias = pessoaAux.conta.ultimasTransferencias[i];
+						
+						if (ultimasTransferencias.estaIniciado > 0){
+							printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+						}
+						
+					}
+					
+					
 				}
 
-			}
-
-
-			break;
 		}
 
-	}
-
-	printf("\n\n======================================================\n");
-
+	printf("\n\n========================================================\n");
+	fecharArquivo(file);
 	system("pause");
 	menuExtrato(pessoa);
 
@@ -1397,7 +1392,8 @@ void verInformacoesConta(TPessoa pessoa) {
 	printf("\n================================\n");
 	system("pause");
 	menuMais(pessoa);
-}
+	
+}//Fim Método
 
 //Helpers
 
@@ -1417,6 +1413,7 @@ FILE* abreArquivo(char modo) {
 			break;
 		case 'f':
 			arquivo = fopen(caminho, "r+b");
+			break;
 		default:
 			arquivo = NULL;
 			break;
@@ -1437,8 +1434,5 @@ FILE* abreArquivo(char modo) {
 void fecharArquivo(FILE *arquivo) {
 	fclose(arquivo);
 }
-
-
-
 
 
