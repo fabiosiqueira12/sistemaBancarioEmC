@@ -61,9 +61,7 @@ typedef struct SPessoa {
 
 //Declaração de váriaveis globais
 
-TPessoa pessoas[2];
 FILE *file;
-int contador = 0;
 TPessoa pessoaLogada;
 
 
@@ -101,9 +99,14 @@ void extratoSaques(TPessoa pessoa);
 
 //Funções para manipular arquivos
 
-FILE* abreArquivo(char modo); //Manipula Um Arquivo dados.txt possibilidades modos = a = append + binario; w = write + binario; r = read + binario;
+/*
+	Função Para manipular os dados,
+	char modo = caracter pra representar modo de abertura de arquivo
+	opções => 'w' = w+b,'r' = 'rb', 'a' = 'ab', f = 'r+b'
+  */
+FILE* abreArquivo(char modo);
 
-void fecharArquivo(FILE *arquivo);
+void fecharArquivo(FILE *arquivo); //Função Para Fechar arquivo
 
 /* Fim Declaração Funções */
 
@@ -372,203 +375,201 @@ void cadastrarUsuario() {
 
 	system("cls");
 
-	if (contador < 2 ) {
+
+	do {
+		printf("\n\n Digite O Nome Do Usuário : ");
+		fflush(stdin);
+		gets(pessoa.nome);
+
+		if (strlen(pessoa.nome) != 0) {
 
 
-		do {
-			printf("\n\n Digite O Nome Do Usuário : ");
-			fflush(stdin);
-			gets(pessoa.nome);
+		} else {
+			printf("\n Digite Algo Para Nome \n");
+			system("pause");
+			system("cls");
+		}
 
-			if (strlen(pessoa.nome) != 0) {
+	} while (strlen(pessoa.nome) == 0);
 
+
+	do {
+
+		printf("\n\n Digite O Número Do Cpf : ");
+		fflush(stdin);
+		gets(pessoa.cpf);
+
+		if (strlen(pessoa.cpf) != 0) {
+
+			if (strlen(pessoa.cpf) == 14) {
 
 			} else {
-				printf("\n Digite Algo Para Nome \n");
+				printf("\n Digite apenas 14 digitos \n");
 				system("pause");
 				system("cls");
 			}
 
-		} while (strlen(pessoa.nome) == 0);
+		} else {
+			printf("\n Digite algo Para O CPF !! \n");
+			system("pause");
+			system("cls");
 
 
-		do {
 
-			printf("\n\n Digite O Número Do Cpf : ");
-			fflush(stdin);
-			gets(pessoa.cpf);
+		}
 
-			if (strlen(pessoa.cpf) != 0) {
+	} while(strlen(pessoa.cpf) < 14);
 
-				if (strlen(pessoa.cpf) == 14) {
+	do {
 
-				} else {
-					printf("\n Digite apenas 14 digitos \n");
-					system("pause");
-					system("cls");
+		printf("\n\n Escolha O Sexo : 1- masculino / 2- feminino : ");
+		fflush(stdin);
+		scanf("%i",&escolhaSexo);
+		switch(escolhaSexo) {
+
+			case  1:
+				strcpy(pessoa.sexo,"masculino");
+				break;
+			case  2:
+				strcpy(pessoa.sexo,"feminino");
+				break;
+			default :
+				printf("\nOpção Inválida\n");
+				system("pause");
+				system("cls");
+				break;
+
+		}
+
+	} while (escolhaSexo != 1 && escolhaSexo != 2);
+
+	do {
+		printf("\n\n Digite Sua Idade : ");
+		fflush(stdin);
+		scanf("%d",&pessoa.idade);
+
+		if (pessoa.idade < 16) {
+			printf("\n Usuário tem que ser maior que 16 anos \n");
+			system("pause");
+			system("cls");
+		}
+
+	} while(pessoa.idade < 16);
+
+
+	do {
+		printf("\n\n Digite A Agencia : ");
+		fflush(stdin);
+		scanf("%d", &pessoa.conta.agencia);
+
+		if (pessoa.conta.agencia <= 0) {
+			printf("\n Digite um valor válido, número ou valor maior que zero\n");
+			system("pause");
+			system("cls");
+		}
+
+	} while (pessoa.conta.agencia <= 0);
+
+
+
+	do {
+		printf("\n\n Digite a operação : ");
+		fflush(stdin);
+		scanf("%d", &pessoa.conta.operacao);
+
+		if (pessoa.conta.operacao <= 0) {
+			printf("\n Digite um valor válido, número ou valor maior que zero\n");
+			system("pause");
+			system("cls");
+		}
+
+	} while (pessoa.conta.operacao <= 0);
+
+	do {
+		printf("\n\n Digite o número da conta : ");
+		fflush(stdin);
+		scanf("%d",&pessoa.conta.numeroConta);
+
+		if (pessoa.conta.numeroConta <= 0) {
+			printf("\n Digite um valor maior que zero \n");
+			system("pause");
+			system("cls");
+
+		} else {
+
+			file = fopen("dados.txt","rb");
+
+			if (file != NULL) {
+
+				while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
+
+					if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
+						printf("\n Esse número de conta já existe \n");
+						system("pause");
+						system("cls");
+						achouConta = 1;
+						break;
+					} else {
+						achouConta = 0;
+					}
+
 				}
 
-			} else {
-				printf("\n Digite algo Para O CPF !! \n");
-				system("pause");
-				system("cls");
-
-
-
-			}
-
-		} while(strlen(pessoa.cpf) < 14);
-
-		do {
-
-			printf("\n\n Escolha O Sexo : 1- masculino / 2- feminino : ");
-			fflush(stdin);
-			scanf("%i",&escolhaSexo);
-			switch(escolhaSexo) {
-
-				case  1:
-					strcpy(pessoa.sexo,"masculino");
-					break;
-				case  2:
-					strcpy(pessoa.sexo,"feminino");
-					break;
-				default :
-					printf("\nOpção Inválida\n");
-					system("pause");
-					system("cls");
-					break;
-
-			}
-
-		} while (escolhaSexo != 1 && escolhaSexo != 2);
-
-		do {
-			printf("\n\n Digite Sua Idade : ");
-			fflush(stdin);
-			scanf("%d",&pessoa.idade);
-
-			if (pessoa.idade < 16) {
-				printf("\n Usuário tem que ser maior que 16 anos \n");
-				system("pause");
-				system("cls");
-			}
-
-		} while(pessoa.idade < 16);
-
-
-		do {
-			printf("\n\n Digite A Agencia : ");
-			fflush(stdin);
-			scanf("%d", &pessoa.conta.agencia);
-
-			if (pessoa.conta.agencia <= 0) {
-				printf("\n Digite um valor válido, número ou valor maior que zero\n");
-				system("pause");
-				system("cls");
-			}
-
-		} while (pessoa.conta.agencia <= 0);
-
-
-
-		do {
-			printf("\n\n Digite a operação : ");
-			fflush(stdin);
-			scanf("%d", &pessoa.conta.operacao);
-
-			if (pessoa.conta.operacao <= 0) {
-				printf("\n Digite um valor válido, número ou valor maior que zero\n");
-				system("pause");
-				system("cls");
-			}
-
-		} while (pessoa.conta.operacao <= 0);
-
-		do {
-			printf("\n\n Digite o número da conta : ");
-			fflush(stdin);
-			scanf("%d",&pessoa.conta.numeroConta);
-
-			if (pessoa.conta.numeroConta <= 0) {
-				printf("\n Digite um valor maior que zero \n");
-				system("pause");
-				system("cls");
-
-			} else {
-
-				file = fopen("dados.txt","rb");
-
-				if (file != NULL) {
-
-					while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
-
-						if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
-							printf("\n Esse número de conta já existe \n");
-							system("pause");
-							system("cls");
-							achouConta = 1;
-							break;
-						} else {
-							achouConta = 0;
-						}
-
-					}
-
-					if (achouConta == 0 ) {
-						printf("\n");
-						numerocontaValidar = 1;
-					}
-
-
-
-
-				} else {
+				if (achouConta == 0 ) {
+					printf("\n");
 					numerocontaValidar = 1;
 				}
 
-				fclose(file);
 
+
+
+			} else {
+				numerocontaValidar = 1;
 			}
 
+			fclose(file);
 
-		} while(numerocontaValidar == 0);
-
-
-		do {
-
-			printf("\n\n Digite A Senha : ");
-			fflush(stdin);
-			scanf("%i", &pessoa.conta.senha);
-
-			if (pessoa.conta.senha <= 0) {
-				printf("\n Digite um valor válido, número ou valor maior que zero\n");
-				system("pause");
-				system("cls");
-			}
-
-		} while(pessoa.conta.senha <= 0);
-
-
-		pessoa.conta.saldo = 100.0;
-
-		printf("\nUsuário Cadastrado com sucesso, Você já pode acessar o sistema\n");
-		pessoa;
-
-		int f;
-		for (f = 0; f < tamanhoArrayExtrato; f++) {
-
-			pessoa.conta.ultimosDepositos[f].estaIniciado = 0;
-			pessoa.conta.ultimosSaques[f].estaIniciado = 0;
-			pessoa.conta.ultimasTransferencias[f].estaIniciado = 0;
 		}
 
-		file = abreArquivo('a');
 
-		fwrite(&pessoa,sizeof(TPessoa),1,file);
+	} while(numerocontaValidar == 0);
 
-		fecharArquivo(file);
 
+	do {
+
+		printf("\n\n Digite A Senha : ");
+		fflush(stdin);
+		scanf("%i", &pessoa.conta.senha);
+
+		if (pessoa.conta.senha <= 0) {
+			printf("\n Digite um valor válido, número ou valor maior que zero\n");
+			system("pause");
+			system("cls");
+		}
+
+	} while(pessoa.conta.senha <= 0);
+
+
+	pessoa.conta.saldo = 100.0;
+
+	printf("\nUsuário Cadastrado com sucesso, Você já pode acessar o sistema\n");
+	pessoa;
+
+	int f;
+	for (f = 0; f < tamanhoArrayExtrato; f++) {
+
+		pessoa.conta.ultimosDepositos[f].estaIniciado = 0;
+		pessoa.conta.ultimosSaques[f].estaIniciado = 0;
+		pessoa.conta.ultimasTransferencias[f].estaIniciado = 0;
 	}
+
+	file = abreArquivo('a');
+
+	fwrite(&pessoa,sizeof(TPessoa),1,file);
+
+	fecharArquivo(file);
+
+
 	system("pause");
 	acessarSistema();
 
