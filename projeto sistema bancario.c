@@ -650,7 +650,7 @@ void editarUsuario(TPessoa pessoa) {
 	char novoCpf[15];
 	char novoSexo[12];
 	int novaIdade;
-	int novaSenha;
+	long novaSenha = 0;
 	int posicao = 0;
 	int pegou = 0;
 	int escolhaSexo = 0;
@@ -1333,8 +1333,8 @@ void deposito(TPessoa pessoa) {
 	TUltimosDepositos auxDeposito;//Para reposicionar array quando tiver cheio
 	TUltimosDepositos ultimoDeposito;
 	TPessoa aux;
-	long numContaAux;
-	float valor;
+	long numContaAux = 0;
+	float valor = 0;
 	float valorAux = 0;
 	int pegou = 0;
 	int posicao = 0;
