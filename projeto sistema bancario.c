@@ -203,7 +203,7 @@ void acessarSistema() {
 
 //Função Que Verifica Admin
 void adminAcesso(){
-	char senha[6];
+	char senha[30];
 	int numeroTentativas = 3;
 	system("cls");
 	system("color 3f");
