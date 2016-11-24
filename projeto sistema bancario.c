@@ -6,15 +6,13 @@
 #include<string.h> //Lib básica
 #include<windows.h> //Lib para pegar funcões e menu do windows
 #include<time.h> //Lib para manipular data e hora
-#define tamanhoArrayExtrato 5 //Variavel para acessar arrays de extrato dentro de pessoa
-
 
 /*Declaração de structs*/
 typedef struct SUltimosSaques {
 
 	float valor;
 	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
-	int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
+	long numeroConta;
 
 } TUltimosSaques;
 
@@ -22,7 +20,8 @@ typedef struct SUltimosDepositos {
 
 	float valor;
 	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
-	int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
+	int porFora; //Variável pra dizer se foi deposito anonimo ou não
+	long numeroConta;
 
 } TUltimosDepositos;
 
@@ -31,7 +30,7 @@ typedef struct STransferencias {
 	float valor;
 	int dia,mes,ano,hora,minuto,segundo; //Para Guardar a data, guardo cada valor em cada variável
 	char nomePessoaRecebeu[70];
-	int estaIniciado; //Variável auxiliar para pecorrer nos arrays dentro da struct pessoa
+	long numeroConta;
 
 } TUltimasTransferencias;
 
@@ -42,9 +41,6 @@ typedef struct Sconta {
 	long numeroConta;
 	long senha;
 	float saldo;
-	TUltimosSaques ultimosSaques[6];
-	TUltimosDepositos ultimosDepositos[6];
-	TUltimasTransferencias ultimasTransferencias[6];
 
 } TConta;
 
@@ -62,11 +58,10 @@ typedef struct SPessoa {
 //Declaração de váriaveis globais
 
 FILE *file;
+FILE *fileExtrato;
 TPessoa pessoaLogada;
 
-
 /* Fim Declaração váriaveis globais */
-
 
 
 /* Declaração das Funções*/
@@ -90,6 +85,7 @@ void verInformacoesConta(TPessoa pessoa);
 void versaldo(TPessoa pessoa);
 void saque(TPessoa pessoa);
 void menuExtrato (TPessoa pessoa);
+void menuExtratoPeriodo(TPessoa pessoa,int tipoExtrato);
 void deposito (TPessoa pessoa);
 void depositoAnonimo();
 void transferencia(TPessoa pessoa);
@@ -105,6 +101,12 @@ void extratoSaques(TPessoa pessoa);
 	opções => 'w' = w+b,'r' = 'rb', 'a' = 'ab', f = 'r+b'
   */
 FILE* abreArquivo(char modo);
+
+FILE* abreArquivoDeposito(char modo);
+
+FILE* abreArquivoSaque(char modo);
+
+FILE* abreArquivoTransferencia(char modo);
 
 void fecharArquivo(FILE *arquivo); //Função Para Fechar arquivo
 
@@ -200,7 +202,7 @@ void acessarSistema() {
 //Função Para Verificar Se Conta Existe
 void loginSistema() {
 	TPessoa aux;
-	int numeroConta;
+	long numeroConta;
 	int usuarioValido = 0;
 	int numeroTentativas = 5;
 	system("cls");
@@ -211,7 +213,7 @@ void loginSistema() {
 		printf("\n\n Número de tentativas: %i, Resta:  %i \n\n",(j),numeroTentativas - (j));
 		printf("\n\nDigite Número Da Conta(só números): ");
 		fflush(stdin);
-		scanf("%i",&numeroConta);
+		scanf("%d",&numeroConta);
 
 		file = abreArquivo('r');
 		if (numeroConta != 0) {
@@ -372,6 +374,8 @@ void cadastrarUsuario() {
 	int escolhaSexo;
 	int numerocontaValidar = 0;
 	int achouConta = 0;
+	int achouCpf = 0;
+	int validaCpf = 0;
 
 	system("cls");
 
@@ -395,7 +399,7 @@ void cadastrarUsuario() {
 
 	do {
 
-		printf("\n\n Digite O Número Do Cpf : ");
+		printf("\n\n Digite o Cpf(###.###.###-##): ");
 		fflush(stdin);
 		gets(pessoa.cpf);
 
@@ -403,8 +407,40 @@ void cadastrarUsuario() {
 
 			if (strlen(pessoa.cpf) == 14) {
 
+				file = fopen("dados.txt","rb");
+
+				if (file != NULL) {
+
+					while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
+
+						if (strcmp(pessoa.cpf, aux.cpf) == 0) {
+							achouCpf = 1;
+							break;
+						} else {
+							achouCpf = 0;
+						}
+
+					}
+
+					if (achouCpf == 0 ) {
+						validaCpf = 1;
+					}
+
+
+				} else {
+					validaCpf = 1;
+				}
+
+				fclose(file);
+
+				if (validaCpf == 0) {
+					printf("\n Esse CPF já existe \n");
+					system("pause");
+					system("cls");
+				}
+
 			} else {
-				printf("\n Digite apenas 14 digitos \n");
+				printf("\n Digite apenas 14 digitos no formato (###.###.###-##) \n");
 				system("pause");
 				system("cls");
 			}
@@ -418,7 +454,7 @@ void cadastrarUsuario() {
 
 		}
 
-	} while(strlen(pessoa.cpf) < 14);
+	} while((strlen(pessoa.cpf) < 14) || (validaCpf != 1));
 
 	do {
 
@@ -444,18 +480,17 @@ void cadastrarUsuario() {
 	} while (escolhaSexo != 1 && escolhaSexo != 2);
 
 	do {
-		printf("\n\n Digite Sua Idade : ");
+		printf("\n Digite sua idade : ");
 		fflush(stdin);
 		scanf("%d",&pessoa.idade);
 
 		if (pessoa.idade < 16) {
-			printf("\n Usuário tem que ser maior que 16 anos \n");
+			printf("\n Sua Idade tem que ser maior que ou igual a 16\n");
 			system("pause");
 			system("cls");
 		}
 
-	} while(pessoa.idade < 16);
-
+	} while (pessoa.idade < 16);
 
 	do {
 		printf("\n\n Digite A Agencia : ");
@@ -521,8 +556,6 @@ void cadastrarUsuario() {
 				}
 
 
-
-
 			} else {
 				numerocontaValidar = 1;
 			}
@@ -537,9 +570,9 @@ void cadastrarUsuario() {
 
 	do {
 
-		printf("\n\n Digite A Senha : ");
+		printf("\n\n Digite A Senha(só números) : ");
 		fflush(stdin);
-		scanf("%i", &pessoa.conta.senha);
+		scanf("%d", &pessoa.conta.senha);
 
 		if (pessoa.conta.senha <= 0) {
 			printf("\n Digite um valor válido, número ou valor maior que zero\n");
@@ -553,15 +586,6 @@ void cadastrarUsuario() {
 	pessoa.conta.saldo = 100.0;
 
 	printf("\nUsuário Cadastrado com sucesso, Você já pode acessar o sistema\n");
-	pessoa;
-
-	int f;
-	for (f = 0; f < tamanhoArrayExtrato; f++) {
-
-		pessoa.conta.ultimosDepositos[f].estaIniciado = 0;
-		pessoa.conta.ultimosSaques[f].estaIniciado = 0;
-		pessoa.conta.ultimasTransferencias[f].estaIniciado = 0;
-	}
 
 	file = abreArquivo('a');
 
@@ -584,10 +608,12 @@ void editarUsuario(TPessoa pessoa) {
 	char novoCpf[15];
 	char novoSexo[12];
 	int novaIdade;
-	long novaSenha;
+	int novaSenha;
 	int posicao = 0;
 	int pegou = 0;
 	int escolhaSexo = 0;
+	int achouCpf = 0;
+	int validaCpf = 0;
 
 
 	system("cls");
@@ -687,7 +713,7 @@ void editarUsuario(TPessoa pessoa) {
 
 			system("cls");
 			do {
-				printf("\n Digite Um Novo CPF : ");
+				printf("\n Digite Um Novo CPF(###.###.###-##) : ");
 				fflush(stdin);
 				gets(novoCpf);
 
@@ -696,65 +722,100 @@ void editarUsuario(TPessoa pessoa) {
 					system("pause");
 					system("cls");
 				} else if (strlen(novoCpf) < 14) {
-					printf("\n Digite 14 digitos para o CPF \n");
+					printf("\n Digite 14 digitos para o CPF (###.###.###-##) \n");
 					system("pause");
 					system("cls");
 				} else if (strlen(novoCpf) > 14) {
-					printf("\n Digite 14 digitos para o CPF \n");
+					printf("\n Digite 14 digitos para o CPF (###.###.###-##) \n");
 					system("pause");
 					system("cls");
 				} else {
 
-					printf("\n Digite A Senha Para Confirmar : ");
-					fflush(stdin);
-					scanf("%i",&senha);
+					file = fopen("dados.txt","rb");
 
-
-					if (pessoa.conta.senha == senha) {
-
-						file = abreArquivo('f');
-
-
-						fseek(file,posicao,SEEK_SET);
+					if (file != NULL) {
 
 						while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
 
-							if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
+							if (strcmp(pessoa.cpf, aux.cpf) == 0) {
+								achouCpf = 1;
+								break;
+							} else {
+								achouCpf = 0;
+							}
 
-								strcpy(aux.cpf,novoCpf);
+						}
 
-								strcpy(pessoa.cpf,novoCpf);
+						if (achouCpf == 0 ) {
+							validaCpf = 1;
+						}
 
-								fseek(file,posicao, SEEK_SET);
-								fwrite(&aux,sizeof(TPessoa),1,file);
 
-								pegou = 1;
+					} else {
+						validaCpf = 1;
+					}
+
+					fclose(file);
+
+					if (validaCpf == 0) {
+						printf("\n Esse CPF já existe \n");
+						system("pause");
+						editarUsuario(pessoa);
+					} else {
+
+
+						printf("\n Digite A Senha Para Confirmar : ");
+						fflush(stdin);
+						scanf("%i",&senha);
+
+
+						if (pessoa.conta.senha == senha) {
+
+							file = abreArquivo('f');
+
+
+							fseek(file,posicao,SEEK_SET);
+
+							while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
+
+								if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
+
+									strcpy(aux.cpf,novoCpf);
+
+									strcpy(pessoa.cpf,novoCpf);
+
+									fseek(file,posicao, SEEK_SET);
+									fwrite(&aux,sizeof(TPessoa),1,file);
+
+									pegou = 1;
+									break;
+								}
+
+								posicao = posicao + sizeof(TPessoa);
+
+							}
+
+							fecharArquivo(file);
+
+							if (pegou == 1) {
+								printf("\n CPF atualizado com sucesso \n");
+								system("pause");
+								editarUsuario(pessoa);
+								break;
+							} else {
+								printf("\n Erro ao tentar salvar CPF, tente novamente !!! \n");
+								system("pause");
+								editarUsuario(pessoa);
 								break;
 							}
 
-							posicao = posicao + sizeof(TPessoa);
-
-						}
-
-						fecharArquivo(file);
-
-						if (pegou == 1) {
-							printf("\n CPF atualizado com sucesso \n");
-							system("pause");
-							editarUsuario(pessoa);
-							break;
 						} else {
-							printf("\n Erro ao tentar salvar CPF, tente novamente !!! \n");
+							printf("\n Senha Incorreta, Tente Novamente \n");
 							system("pause");
 							editarUsuario(pessoa);
 							break;
-						}
 
-					} else {
-						printf("\n Senha Incorreta, Tente Novamente \n");
-						system("pause");
-						editarUsuario(pessoa);
-						break;
+						}
 
 					}
 
@@ -793,6 +854,7 @@ void editarUsuario(TPessoa pessoa) {
 
 			system("cls");
 			printf("\n Tem certeza dessa operacão ? 1- sim / 2- não ");
+			fflush(stdin);
 			scanf("%i",&pegou);
 
 			if (pegou == 1) {
@@ -851,7 +913,8 @@ void editarUsuario(TPessoa pessoa) {
 			do {
 
 				printf("Digite a nova idade : ");
-				scanf("%i",&novaIdade);
+				fflush(stdin);
+				scanf("%d",&novaIdade);
 
 				if (novaIdade < 16) {
 					printf("\n Idade tem que ser maior do que 16 anos \n");
@@ -924,7 +987,7 @@ void editarUsuario(TPessoa pessoa) {
 			do {
 				printf("\nDigite Sua Senha Nova : ");
 				fflush(stdin);
-				scanf("%i", &novaSenha);
+				scanf("%d", &novaSenha);
 
 				if (novaSenha <= 0) {
 					printf("\n Digite um valor válido, número ou valor maior que zero\n");
@@ -936,12 +999,12 @@ void editarUsuario(TPessoa pessoa) {
 
 			do {
 
-				printf("Digite Seu CPF para Confimar : ");
+				printf("Digite Seu CPF para Confimar(###.###.###-##) : ");
 				fflush(stdin);
 				gets(cpfAux);
 
 				if (strlen(cpfAux) < 14 || strlen(cpfAux) > 14) {
-					printf("\n Digite 14 digitos para o CPF \n");
+					printf("\n Digite 14 digitos para o CPF(###.###.###-##) \n");
 					system("pause");
 					system("cls");
 				}
@@ -1033,10 +1096,11 @@ void verInformacoes(TPessoa pessoa) {
 
 void versaldo(TPessoa pessoa) {
 	TPessoa aux;
-	int senha;
+	long senha;
 
 	system("cls");
 	printf("\nDigite Sua Senha : ");
+	fflush(stdin);
 	scanf("%i",&senha);
 
 	if (pessoa.conta.senha == senha) {
@@ -1073,124 +1137,117 @@ void saque(TPessoa pessoa) {
 	int pegou = 0;
 	int posicao = 0;
 	float valor;
-	int senha;
+	long senha;
+	long numContaAux;
 
 	system("cls");
 	printf("\nDigite O Valor A Ser Sacado : ");
+	fflush(stdin);
 	scanf("%f",&valor);
 
-	if (valor <= 0 ) {
+	if (valor <= 0) {
+
 		printf("\n O Valor Tem Que Ser Maior Que Zero \n");
 		system("pause");
 		saque(pessoa);
-	}
-
-
-	printf("\nDigite Sua Senha : ");
-	scanf("%i",&senha);
-
-	if (pessoa.conta.senha == senha) {
-
-		file = abreArquivo('f');
-
-		fseek(file,posicao,SEEK_SET);
-
-		while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
-
-			if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
-				if (aux.conta.saldo < valor) {
-					printf("\n Saldo insuficiente para realizar o saque\n");
-					system("pause");
-					menuDeAcesso(pessoa);
-					fecharArquivo(file);
-					break;
-				} else {
-
-
-
-					aux.conta.saldo = aux.conta.saldo - valor;
-
-					pessoa.conta.saldo = pessoa.conta.saldo - valor;
-
-					struct tm *local;
-					time_t t;
-
-					t= time(NULL);//Iniciando A Váriavel
-					local=localtime(&t);
-
-					ultimosSaque.valor = valor;
-					ultimosSaque.dia = local->tm_mday;
-					ultimosSaque.mes = local->tm_mon + 1;
-					ultimosSaque.ano = local->tm_year + 1900;
-					ultimosSaque.hora = local->tm_hour;
-					ultimosSaque.minuto = local->tm_min;
-					ultimosSaque.segundo = local->tm_sec;
-					ultimosSaque.estaIniciado = 1;
-
-					int f;
-					for (f = 0; f < tamanhoArrayExtrato; f++) {
-
-						if ( f == (tamanhoArrayExtrato - 1)) {
-
-							int k;
-							for (k = 0 ; k < tamanhoArrayExtrato; k++) {
-								if (k == (tamanhoArrayExtrato -1) ) {
-									aux.conta.ultimosSaques[k] = ultimosSaque;
-								} else {
-
-									auxSaque = aux.conta.ultimosSaques[k + 1];
-									aux.conta.ultimosSaques[k] = auxSaque;
-
-								}
-							}
-						} else {
-
-							if (aux.conta.ultimosSaques[f].estaIniciado == 0) {
-								aux.conta.ultimosSaques[f] = ultimosSaque;
-								break;
-							}
-
-						}
-
-					}
-
-
-					fseek(file,posicao,SEEK_SET);
-
-					fwrite(&aux,sizeof(TPessoa),1,file);
-
-				}
-
-				pegou = 1;
-				break;
-			}
-			posicao = posicao + sizeof(TPessoa);
-		}
-
-		fecharArquivo(file);
-
-		if (pegou == 1) {
-			printf("\n Saque Realizado Com Sucesso \n");
-			printf("\n Seu novo Saldo é : %.2f \n", pessoa.conta.saldo);
-			system("pause");
-			menuDeAcesso(pessoa);
-
-		} else {
-
-			printf("\n Conta Não Tá Cadastrada No Sistema \n");
-			system("pause");
-			menuDeAcesso(pessoa);
-
-		}
 
 	} else {
 
-		printf("\nSenha Incorreta !!\n");
-		system("pause");
-		menuDeAcesso(pessoa);
+		printf("\nDigite Sua Senha : ");
+		fflush(stdin);
+		scanf("%i",&senha);
+
+		if (pessoa.conta.senha == senha) {
+
+			file = abreArquivo('f');
+
+			fseek(file,posicao,SEEK_SET);
+
+			while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
+
+				if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
+					if (aux.conta.saldo < valor) {
+						printf("\n Saldo insuficiente para realizar o saque\n");
+						system("pause");
+						menuDeAcesso(pessoa);
+						fecharArquivo(file);
+						break;
+					} else {
+
+						numContaAux = aux.conta.numeroConta;
+
+						aux.conta.saldo = aux.conta.saldo - valor;
+
+						pessoa.conta.saldo = pessoa.conta.saldo - valor;
+
+						fseek(file,posicao,SEEK_SET);
+
+						fwrite(&aux,sizeof(TPessoa),1,file);
+
+					}
+
+					pegou = 1;
+					break;
+				}
+				posicao = posicao + sizeof(TPessoa);
+			}
+
+			fecharArquivo(file);
+
+			if (pegou == 1) {
+
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				ultimosSaque.valor = valor;
+				ultimosSaque.dia = local->tm_mday;
+				ultimosSaque.mes = local->tm_mon + 1;
+				ultimosSaque.ano = local->tm_year + 1900;
+				ultimosSaque.hora = local->tm_hour;
+				ultimosSaque.minuto = local->tm_min;
+				ultimosSaque.segundo = local->tm_sec;
+				ultimosSaque.numeroConta = numContaAux;
+
+				fileExtrato = abreArquivoSaque('a');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Não foi possivel abrir o arquivo \n");
+					system("pause");
+					menuDeAcesso(pessoa);
+
+				} else {
+
+					fwrite(&ultimosSaque,sizeof(TUltimosSaques),1,fileExtrato);
+
+				}
+				fecharArquivo(fileExtrato);
+
+				printf("\n Saque Realizado Com Sucesso \n");
+				printf("\n Seu novo Saldo é : %.2f \n", pessoa.conta.saldo);
+				system("pause");
+				menuDeAcesso(pessoa);
+
+			} else {
+
+				printf("\n Conta Não Tá Cadastrada No Sistema \n");
+				system("pause");
+				menuDeAcesso(pessoa);
+
+			}
+
+		} else {
+
+			printf("\nSenha Incorreta !!\n");
+			system("pause");
+			menuDeAcesso(pessoa);
+
+		}
 
 	}
-
 }//Fim Metodo
 
 
@@ -1234,7 +1291,7 @@ void deposito(TPessoa pessoa) {
 	TUltimosDepositos auxDeposito;//Para reposicionar array quando tiver cheio
 	TUltimosDepositos ultimoDeposito;
 	TPessoa aux;
-	long numConta;
+	long numContaAux;
 	float valor;
 	float valorAux = 0;
 	int pegou = 0;
@@ -1247,10 +1304,10 @@ void deposito(TPessoa pessoa) {
 	scanf("%f", &valor);
 
 	if (valor <= 0) {
+
 		printf("\n O Valor Tem Que Ser Maior que zero \n");
 		system("pause");
 		deposito(pessoa);
-
 
 	} else {
 
@@ -1262,55 +1319,10 @@ void deposito(TPessoa pessoa) {
 
 			if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
 				valorAux = aux.conta.saldo + valor;
-
+				numContaAux = aux.conta.numeroConta;
 				aux.conta.saldo = valorAux;
 
 				pessoa.conta.saldo = valorAux;
-
-				struct tm *local;
-				time_t t;
-
-				t= time(NULL);//Iniciando A Váriavel
-				local=localtime(&t);
-
-				ultimoDeposito.valor = valor;
-				ultimoDeposito.dia = local->tm_mday;
-				ultimoDeposito.mes = local->tm_mon + 1;
-				ultimoDeposito.ano = local->tm_year + 1900;
-				ultimoDeposito.hora = local->tm_hour;
-				ultimoDeposito.minuto = local->tm_min;
-				ultimoDeposito.segundo = local->tm_sec;
-				ultimoDeposito.estaIniciado = 1;
-
-				int f;
-				for (f = 0; f < tamanhoArrayExtrato; f++) {
-
-					if ( f == (tamanhoArrayExtrato - 1)) {
-
-						int k;
-						for (k = 0 ; k < tamanhoArrayExtrato; k++) {
-							if (k == (tamanhoArrayExtrato -1) ) {
-								aux.conta.ultimosDepositos[k] = ultimoDeposito;
-							} else {
-
-								auxDeposito = aux.conta.ultimosDepositos[k + 1];
-								aux.conta.ultimosDepositos[k] = auxDeposito;
-
-							}
-						}
-
-						break;
-					} else {
-
-						if (aux.conta.ultimosDepositos[f].estaIniciado == 0) {
-							aux.conta.ultimosDepositos[f] = ultimoDeposito;
-							break;
-						}
-
-					}
-
-				}
-
 
 				fseek(file,posicao, SEEK_SET);
 
@@ -1328,6 +1340,38 @@ void deposito(TPessoa pessoa) {
 
 
 		if (pegou == 1) {
+
+			struct tm *local;
+			time_t t;
+
+			t= time(NULL);//Iniciando A Váriavel
+			local=localtime(&t);
+
+			ultimoDeposito.valor = valor;
+			ultimoDeposito.dia = local->tm_mday;
+			ultimoDeposito.mes = local->tm_mon + 1;
+			ultimoDeposito.ano = local->tm_year + 1900;
+			ultimoDeposito.hora = local->tm_hour;
+			ultimoDeposito.minuto = local->tm_min;
+			ultimoDeposito.segundo = local->tm_sec;
+			ultimoDeposito.porFora = 0;
+			ultimoDeposito.numeroConta = numContaAux;
+
+			fileExtrato = abreArquivoDeposito('a');
+
+
+			if (fileExtrato == NULL) {
+				printf("\n Não foi possivel abrir o arquivo \n ");
+				system("pause");
+				menuDeAcesso(pessoa);
+			} else {
+
+				fwrite(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+			}
+
+			fclose(fileExtrato);
+
 
 			printf("\nDeposito Realizado Com Sucesso \n");
 			printf("\n Seu novo Saldo é : %.2f \n", pessoa.conta.saldo);
@@ -1347,12 +1391,15 @@ void deposito(TPessoa pessoa) {
 }//Fim Metodo
 
 void depositoAnonimo() {
+
+	TUltimosDepositos ultimoDeposito;
 	TPessoa aux;
 	long numConta;
 	float valor;
 	float valorAux = 0;
 	int pegou = 0;
 	int posicao = 0;
+	long numContaAux;
 
 	system("cls");
 
@@ -1365,9 +1412,7 @@ void depositoAnonimo() {
 		system("pause");
 		depositoAnonimo();
 
-
 	} else {
-
 
 		printf("\n Digite O Número Da Conta A Ser Depositada: ");
 		fflush(stdin);
@@ -1376,13 +1421,11 @@ void depositoAnonimo() {
 		file = abreArquivo('f');
 
 
-		fseek(file,posicao,SEEK_SET);
-
 		while( fread(&aux,sizeof(TPessoa),1,file) == 1) {
 
 			if (aux.conta.numeroConta == numConta) {
 				valorAux = aux.conta.saldo + valor;
-
+				numContaAux = aux.conta.numeroConta;
 				aux.conta.saldo = valorAux;
 
 
@@ -1397,13 +1440,41 @@ void depositoAnonimo() {
 
 		}
 
-
-
-
 		fecharArquivo(file);
 
 
 		if (pegou == 1) {
+
+			struct tm *local;
+			time_t t;
+
+			t= time(NULL);//Iniciando A Váriavel
+			local=localtime(&t);
+
+			ultimoDeposito.valor = valor;
+			ultimoDeposito.dia = local->tm_mday;
+			ultimoDeposito.mes = local->tm_mon + 1;
+			ultimoDeposito.ano = local->tm_year + 1900;
+			ultimoDeposito.hora = local->tm_hour;
+			ultimoDeposito.minuto = local->tm_min;
+			ultimoDeposito.segundo = local->tm_sec;
+			ultimoDeposito.porFora = 1;
+			ultimoDeposito.numeroConta = numContaAux;
+
+			fileExtrato = abreArquivoDeposito('a');
+			if (fileExtrato == NULL) {
+				printf("\n Não foi possivel abrir o arquivo \n ");
+				system("pause");
+				acessarSistema();
+			} else {
+
+				fwrite(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+			}
+
+			fclose(fileExtrato);
+
+
 			printf("\nDeposito Realizado Com Sucesso \n");
 			system("pause");
 			acessarSistema();
@@ -1431,8 +1502,10 @@ void transferencia(TPessoa pessoa) {
 	int pegou = 0;
 	int posicaoPrimeiro = 0; //Primeira pessoa a ter os campos alterados
 	int posicaoSegundo = 0; //Segunda Pessoa a ter os campos alterados
+	long numContaAux;
 
 	printf("\n Digite O Valor A Ser Transferindo : ");
+	fflush(stdin);
 	scanf("%f",&valor);
 
 	if (valor <= 0) {
@@ -1442,6 +1515,7 @@ void transferencia(TPessoa pessoa) {
 	} else {
 
 		printf("\n Digite A Conta Onde O Valor Será Transferido: ");
+		fflush(stdin);
 		scanf("%i", &numConta);
 
 		if (numConta == pessoa.conta.numeroConta) {
@@ -1451,6 +1525,7 @@ void transferencia(TPessoa pessoa) {
 		} else {
 
 			printf("\n Digite A Senha: ");
+			fflush(stdin);
 			scanf("%i", &senha);
 
 			if (pessoa.conta.senha == senha) {
@@ -1494,45 +1569,11 @@ void transferencia(TPessoa pessoa) {
 
 							if (aux.conta.numeroConta == pessoa.conta.numeroConta) {
 
-
 								aux.conta.saldo = aux.conta.saldo - valor;
 
+								numContaAux = aux.conta.numeroConta;
+
 								pessoa.conta.saldo = pessoa.conta.saldo - valor;
-
-								struct tm *local;
-								time_t t;
-
-								t= time(NULL);//Iniciando A Váriavel
-								local=localtime(&t);
-
-								ultimaTransferencia.valor = valor;
-								strcpy(ultimaTransferencia.nomePessoaRecebeu,nomeQuemRecebeu);
-								ultimaTransferencia.dia = local->tm_mday;
-								ultimaTransferencia.mes = local->tm_mon + 1;
-								ultimaTransferencia.ano = local->tm_year + 1900;
-								ultimaTransferencia.hora = local->tm_hour;
-								ultimaTransferencia.minuto = local->tm_min;
-								ultimaTransferencia.segundo = local->tm_sec;
-								ultimaTransferencia.estaIniciado = 1;
-
-								int f;
-								for (f = 0; f < tamanhoArrayExtrato; f++) {
-
-									if ( f == (tamanhoArrayExtrato - 1)) {
-
-										aux.conta.ultimasTransferencias[4]= ultimaTransferencia;
-										break;
-									} else {
-
-										if (aux.conta.ultimasTransferencias[f].estaIniciado == 0) {
-											aux.conta.ultimasTransferencias[f] = ultimaTransferencia;
-											break;
-										}
-
-									}
-
-								}
-
 
 								fseek(file,posicaoSegundo,SEEK_SET);
 
@@ -1544,6 +1585,37 @@ void transferencia(TPessoa pessoa) {
 						}
 
 						fecharArquivo(file);
+
+						struct tm *local;
+						time_t t;
+
+						t= time(NULL);//Iniciando A Váriavel
+						local=localtime(&t);
+
+						ultimaTransferencia.valor = valor;
+						strcpy(ultimaTransferencia.nomePessoaRecebeu,nomeQuemRecebeu);
+						ultimaTransferencia.dia = local->tm_mday;
+						ultimaTransferencia.mes = local->tm_mon + 1;
+						ultimaTransferencia.ano = local->tm_year + 1900;
+						ultimaTransferencia.hora = local->tm_hour;
+						ultimaTransferencia.minuto = local->tm_min;
+						ultimaTransferencia.segundo = local->tm_sec;
+						ultimaTransferencia.numeroConta = numContaAux;
+
+						fileExtrato = abreArquivoTransferencia('a');
+
+						if (fileExtrato == NULL) {
+							printf("\n Não Foi Possível abrir o arquivo \n");
+							system("pause");
+							menuDeAcesso(pessoa);
+						} else {
+
+
+							fwrite(&ultimaTransferencia,sizeof(TUltimasTransferencias),1,fileExtrato);
+
+						}
+
+						fclose(fileExtrato);
 
 						printf ("\n Transferência realizada com sucesso !! \n");
 						printf ("Seu Saldo Atual é : %.2f\n", pessoa.conta.saldo);
@@ -1565,10 +1637,6 @@ void transferencia(TPessoa pessoa) {
 
 				}
 
-
-
-
-
 			} else {
 				printf("\n Senha Incorreta!! \n");
 				system("pause");
@@ -1586,111 +1654,1014 @@ void transferencia(TPessoa pessoa) {
 
 void extratoDepositos(TPessoa pessoa) {
 	TUltimosDepositos ultimoDeposito;
-	TPessoa pessoaAux;
-	file = abreArquivo('r');
+	int opcao;
+	int contador = 0;
+	long posicao = 0;
 	system("cls");
 
-	printf("\n================== ÚLTIMOS DEPOSITOS ====================\n");
+	printf("\n\n 1 - Últimos 5 Depositos ");
+	printf ("\n 2 - Últimos por periodo ");
+	printf("\n 3 - Voltar");
+	printf("\n Digite sua opção : ");
+	fflush(stdin);
+	scanf("%i",&opcao);
 
-	while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
+	switch(opcao) {
 
-		if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+		case 1:
+			system("cls");
 
-			int i;
-			for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ) {
+			fileExtrato = abreArquivoDeposito('r');
 
-				ultimoDeposito = pessoaAux.conta.ultimosDepositos[i];
 
-				if (ultimoDeposito.estaIniciado > 0) {
-					printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
 
+			if (fileExtrato == NULL) {
+
+				printf("\n Você não realizou Depositos ainda \n");
+				system("pause");
+				menuExtrato(pessoa);
+
+			} else {
+
+				fseek(fileExtrato,0,SEEK_END);
+
+				posicao = ftell(fileExtrato);
+
+				posicao = posicao - sizeof(TUltimosDepositos);
+
+
+				printf("\n================== ÚLTIMOS DEPOSITOS ====================\n");
+
+				while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+					fread(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+					if (ultimoDeposito.numeroConta == pessoa.conta.numeroConta) {
+
+
+
+						if (contador < 5) {
+
+							if (ultimoDeposito.porFora == 1) {
+
+								printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Por Fora",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+							} else {
+								printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Você",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+							}
+							contador++;
+
+
+
+						} else {
+							break;
+						}
+
+
+
+
+					}
+
+
+					posicao = posicao - sizeof(TUltimosDepositos);
 				}
 
+
+				printf("\n\n========================================================\n");
 			}
 
+			fecharArquivo(fileExtrato);
 
-		}
+			system("pause");
+			menuExtrato(pessoa);
 
+			break;
+		case 2:
+			menuExtratoPeriodo(pessoa,1);
+			break;
+		case 3:
+			menuExtrato(pessoa);
+			break;
+		default:
+			printf("\n Opção Inválida \n");
+			system("pause");
+			extratoDepositos(pessoa);
+			break;
 	}
 
-	printf("\n\n========================================================\n");
-	fecharArquivo(file);
 
-	system("pause");
-	menuExtrato(pessoa);
+
 
 }//Fim Método
 
 void extratoSaques(TPessoa pessoa) {
 	TUltimosSaques ultimoSaque;
-	TPessoa pessoaAux;
-	file = abreArquivo('r');
+	int opcao;
+	int contador = 0;
+	int posicao = 0;
 	system("cls");
 
-	printf("\n================== ÚLTIMOS SAQUES ====================\n");
+	printf("\n\n 1 - Últimos 5 Saques ");
+	printf ("\n 2 - Últimos por periodo ");
+	printf("\n 3 - Voltar");
+	printf("\n Digite sua opção : ");
+	fflush(stdin);
+	scanf("%i",&opcao);
 
-	while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
+	switch(opcao) {
 
-		if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+		case 1:
+			system("cls");
 
-			int i;
-			for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ) {
+			fileExtrato = abreArquivoSaque('r');
 
-				ultimoSaque = pessoaAux.conta.ultimosSaques[i];
 
-				if (ultimoSaque.estaIniciado > 0) {
-					printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+
+			if (fileExtrato == NULL) {
+
+				printf("\n Você não realizou Saques ainda \n");
+				system("pause");
+				menuExtrato(pessoa);
+
+			} else {
+
+
+				fseek(fileExtrato,0,SEEK_END);
+
+				posicao = ftell(fileExtrato);
+
+				posicao = posicao - sizeof(TUltimosSaques);
+
+
+
+				printf("\n================== ÚLTIMOS SAQUES ====================\n");
+
+				while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+					fread(&ultimoSaque,sizeof(TUltimosSaques),1,fileExtrato);
+
+					if (ultimoSaque.numeroConta == pessoa.conta.numeroConta) {
+
+
+						if (contador < 5) {
+							fseek(fileExtrato,posicao,SEEK_END);
+
+							printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+							contador++;
+
+						} else {
+							break;
+						}
+
+					}
+
+
+					posicao = posicao - sizeof(TUltimosSaques);
 				}
 
+				printf("\n\n========================================================\n");
 			}
 
+			fecharArquivo(fileExtrato);
 
-		}
+
+			system("pause");
+			menuExtrato(pessoa);
+
+
+			break;
+		case 2:
+			menuExtratoPeriodo(pessoa,2);
+			break;
+		case 3:
+			menuExtrato(pessoa);
+			break;
+		default:
+			printf("\n Opção Inválida \n");
+			system("pause");
+			extratoDepositos(pessoa);
+			break;
 
 	}
 
-	printf("\n\n========================================================\n");
-	fecharArquivo(file);
 
-	system("pause");
-	menuExtrato(pessoa);
 
 }//Fim Método
 
 void extratoTransferencias(TPessoa pessoa) {
+
 	TUltimasTransferencias ultimasTransferencias;
-	TPessoa pessoaAux;
-	file = abreArquivo('r');
+	int opcao;
+	int posicao = 0;
+	int contador = 0;
 	system("cls");
 
-	printf("\n================== ÚLTIMAS TRANSFERÊNCIAS ====================\n");
+	printf("\n\n 1 - Últimas 5 Transferências ");
+	printf ("\n 2 - Últimas por periodo ");
+	printf("\n 3 - Voltar");
+	printf("\n Digite sua opção : ");
+	fflush(stdin);
+	scanf("%i",&opcao);
 
-	while( fread(&pessoaAux,sizeof(TPessoa),1,file) == 1) {
+	switch(opcao) {
 
-		if (pessoaAux.conta.numeroConta == pessoa.conta.numeroConta) {
+		case 1:
+			system("cls");
 
-			int i;
-			for (i = tamanhoArrayExtrato -1 ; i >= 0; i-- ) {
+			fileExtrato = abreArquivoTransferencia('r');
 
-				ultimasTransferencias = pessoaAux.conta.ultimasTransferencias[i];
 
-				if (ultimasTransferencias.estaIniciado > 0) {
-					printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+
+			if (fileExtrato == NULL) {
+
+				printf("\n Você não realizou Transferências ainda \n");
+				system("pause");
+				menuExtrato(pessoa);
+
+			} else {
+				fseek(fileExtrato,0,SEEK_END);
+
+				posicao = ftell(fileExtrato);
+
+				posicao = posicao - sizeof(TUltimasTransferencias);
+
+				printf("\n================== ÚLTIMAS TRANSFERÊNCIAS ====================\n");
+
+				while(fseek(fileExtrato,posicao,SEEK_SET) != -1 ) {
+
+					fread(&ultimasTransferencias,sizeof(TUltimasTransferencias),1,fileExtrato);
+
+					if (ultimasTransferencias.numeroConta == pessoa.conta.numeroConta) {
+
+						if (contador < 5) {
+
+							printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+
+							contador ++;
+
+						} else {
+							break;
+						}
+
+
+
+					}
+
+					posicao = posicao - sizeof(TUltimasTransferencias);
 				}
 
+				printf("\n\n========================================================\n");
 			}
 
+			fecharArquivo(fileExtrato);
 
-		}
+			system("pause");
+			menuExtrato(pessoa);
+
+			break;
+
+		case 2:
+			menuExtratoPeriodo(pessoa,3);
+			break;
+		case 3:
+			menuExtrato(pessoa);
+			break;
+		default:
+			printf("\n Opção Inválida \n");
+			system("pause");
+			extratoDepositos(pessoa);
+			break;
 
 	}
 
-	printf("\n\n========================================================\n");
-	fecharArquivo(file);
-	system("pause");
-	menuExtrato(pessoa);
 
 }//Fim Método
+
+void menuExtratoPeriodo(TPessoa pessoa,int tipoExtrato) {
+	TUltimosDepositos ultimoDeposito;
+	TUltimosSaques ultimoSaque;
+	TUltimasTransferencias ultimasTransferencias;
+	int opcao;
+
+	system("cls");
+
+	printf("\n\n 1 - Últimos 5 dias ");
+	printf ("\n 2 - Últimos 15 dias ");
+	printf("\n 3 - Últimos 30 dias");
+	printf("\n 4 - voltar ");
+	printf("\n Digite sua opção : ");
+	fflush(stdin);
+	scanf("%i",&opcao);
+
+	switch(opcao) {
+
+		case 1:
+
+			if (tipoExtrato == 1) {
+
+				int quantidade = 0;
+				int posicao = 0;
+				int diaAux;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoDeposito('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Depositos ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosDepositos);
+
+
+					printf("\n================== DEPOSITOS ÚLTIMOS 5 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+						if (ultimoDeposito.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 5) {
+
+								if (ultimoDeposito.dia == diaAux) {
+
+
+									if (ultimoDeposito.porFora == 1) {
+
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Por Fora",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									} else {
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Você",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									}
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosDepositos);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			} else if (tipoExtrato == 2) {
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoSaque('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Saques ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosSaques);
+
+					printf("\n================== SAQUES ÚLTIMOS 5 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoSaque,sizeof(TUltimosSaques),1,fileExtrato);
+
+						if (ultimoSaque.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 5) {
+
+								if (ultimoSaque.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosSaques);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			} else if (tipoExtrato == 3) {
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoTransferencia('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Transferências ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimasTransferencias);
+
+					printf("\n================== TRANSFERÊNCIAS ÚLTIMOS 5 DIAS ====================\n");
+
+					while(fseek(fileExtrato,posicao,SEEK_SET) != -1 ) {
+
+						fread(&ultimasTransferencias,sizeof(TUltimasTransferencias),1,fileExtrato);
+
+						if (ultimasTransferencias.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 5) {
+
+								if (ultimasTransferencias.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+
+						posicao = posicao - sizeof(TUltimasTransferencias);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+			}
+
+			break;
+
+		case 2:
+
+			if (tipoExtrato == 1) {
+				int quantidade = 0;
+				int posicao = 0;
+				int diaAux;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoDeposito('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Depositos ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosDepositos);
+
+
+					printf("\n================== DEPOSITOS ÚLTIMOS 15 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+						if (ultimoDeposito.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 15) {
+
+								if (ultimoDeposito.dia == diaAux) {
+
+
+									if (ultimoDeposito.porFora == 1) {
+
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Por Fora",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									} else {
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Você",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									}
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosDepositos);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			} else if (tipoExtrato == 2) {
+
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+				system("cls");
+
+				fileExtrato = abreArquivoSaque('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Saques ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosSaques);
+
+					printf("\n================== SAQUES ÚLTIMOS 15 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoSaque,sizeof(TUltimosSaques),1,fileExtrato);
+
+						if (ultimoSaque.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 15) {
+
+								if (ultimoSaque.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosSaques);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+
+			} else if (tipoExtrato == 3) {
+
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoTransferencia('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Transferências ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimasTransferencias);
+
+					printf("\n================== TRANSFERÊNCIAS ÚLTIMOS 15 DIAS ====================\n");
+
+					while(fseek(fileExtrato,posicao,SEEK_SET) != -1 ) {
+
+						fread(&ultimasTransferencias,sizeof(TUltimasTransferencias),1,fileExtrato);
+
+						if (ultimasTransferencias.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 15) {
+
+								if (ultimasTransferencias.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+
+						posicao = posicao - sizeof(TUltimasTransferencias);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			}
+
+			break;
+
+		case 3:
+
+			if (tipoExtrato == 1) {
+				int quantidade = 0;
+				int posicao = 0;
+				int diaAux;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoDeposito('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Depositos ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosDepositos);
+
+
+					printf("\n================== DEPOSITOS ÚLTIMOS 30 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoDeposito,sizeof(TUltimosDepositos),1,fileExtrato);
+
+						if (ultimoDeposito.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 30) {
+
+								if (ultimoDeposito.dia == diaAux) {
+
+
+									if (ultimoDeposito.porFora == 1) {
+
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Por Fora",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									} else {
+										printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d Foi Você",ultimoDeposito.valor,ultimoDeposito.dia,ultimoDeposito.mes,ultimoDeposito.ano,ultimoDeposito.hora,ultimoDeposito.minuto,ultimoDeposito.segundo);
+
+									}
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosDepositos);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			} else if (tipoExtrato == 2) {
+
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+				system("cls");
+
+				fileExtrato = abreArquivoSaque('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Saques ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimosSaques);
+
+					printf("\n================== SAQUES ÚLTIMOS 30 DIAS ====================\n");
+
+					while( fseek(fileExtrato,posicao,SEEK_SET) != -1) {
+
+						fread(&ultimoSaque,sizeof(TUltimosSaques),1,fileExtrato);
+
+						if (ultimoSaque.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 30) {
+
+								if (ultimoSaque.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f    Data : %d/%d/%d    Hora : %d:%d:%d",ultimoSaque.valor,ultimoSaque.dia,ultimoSaque.mes,ultimoSaque.ano,ultimoSaque.hora,ultimoSaque.minuto,ultimoSaque.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+						posicao = posicao - sizeof(TUltimosSaques);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+
+			} else if (tipoExtrato == 3) {
+
+				int quantidade = 0;
+				int diaAux;
+				int posicao = 0;
+				struct tm *local;
+				time_t t;
+
+				t= time(NULL);//Iniciando A Váriavel
+				local=localtime(&t);
+
+				int diaAtual = local->tm_mday;
+				diaAux = diaAtual;
+
+
+				system("cls");
+
+				fileExtrato = abreArquivoTransferencia('r');
+
+				if (fileExtrato == NULL) {
+
+					printf("\n Você não realizou Transferências ainda \n");
+					system("pause");
+					menuExtrato(pessoa);
+
+				} else {
+					fseek(fileExtrato,0,SEEK_END);
+
+					posicao = ftell(fileExtrato);
+
+					posicao = posicao - sizeof(TUltimasTransferencias);
+
+					printf("\n================== TRANSFERÊNCIAS ÚLTIMOS 30 DIAS ====================\n");
+
+					while(fseek(fileExtrato,posicao,SEEK_SET) != -1 ) {
+
+						fread(&ultimasTransferencias,sizeof(TUltimasTransferencias),1,fileExtrato);
+
+						if (ultimasTransferencias.numeroConta == pessoa.conta.numeroConta) {
+
+							if (quantidade < 30) {
+
+								if (ultimasTransferencias.dia == diaAux) {
+
+
+									printf ("\n Valor : %.2f Para : %s   Data : %d/%d/%d    Hora : %d:%d:%d",ultimasTransferencias.valor,ultimasTransferencias.nomePessoaRecebeu,ultimasTransferencias.dia,ultimasTransferencias.mes,ultimasTransferencias.ano,ultimasTransferencias.hora,ultimasTransferencias.minuto,ultimasTransferencias.segundo);
+
+
+								} else {
+									diaAux--;
+									quantidade++;
+								}
+
+							} else {
+								break;
+							}
+
+
+						}
+
+						posicao = posicao - sizeof(TUltimasTransferencias);
+					}
+
+
+					printf("\n\n========================================================\n");
+				}
+
+				fecharArquivo(fileExtrato);
+				system("pause");
+				menuExtrato(pessoa);
+
+
+			}
+
+			break;
+
+		case 4:
+			if (tipoExtrato == 1) {
+				extratoDepositos(pessoa);
+			} else if (tipoExtrato == 2) {
+				extratoSaques(pessoa);
+			} else if (tipoExtrato == 3) {
+				extratoTransferencias(pessoa);
+			}
+			break;
+
+		default:
+			printf("\n Opção Inválida \n");
+			system("pause");
+			menuExtratoPeriodo(pessoa,tipoExtrato);
+			break;
+
+	}
+
+}
 
 void verInformacoesConta(TPessoa pessoa) {
 	system("cls");
@@ -1736,6 +2707,92 @@ FILE* abreArquivo(char modo) {
 		system("pause");
 		acessarSistema();
 	}
+
+	return arquivo;
+
+}
+
+FILE* abreArquivoDeposito(char modo) {
+
+	FILE *arquivo;
+	char caminho [30] = "depositos.txt";
+	switch (modo) {
+
+		case 'w'://Escrever
+			arquivo = fopen(caminho,"wb");
+			break;
+		case 'r'://Ler
+			arquivo = fopen(caminho,"rb");
+			break;
+		case 'a'://Append
+			arquivo = fopen(caminho,"ab");
+			break;
+		case 'f':
+			arquivo = fopen(caminho, "r+b");
+			break;
+		default:
+			arquivo = NULL;
+			break;
+
+	}
+
+	return arquivo;
+
+}
+
+
+FILE* abreArquivoSaque(char modo) {
+
+	FILE *arquivo;
+	char caminho [30] = "saques.txt";
+	switch (modo) {
+
+		case 'w'://Escrever
+			arquivo = fopen(caminho,"wb");
+			break;
+		case 'r'://Ler
+			arquivo = fopen(caminho,"rb");
+			break;
+		case 'a'://Append
+			arquivo = fopen(caminho,"ab");
+			break;
+		case 'f':
+			arquivo = fopen(caminho, "r+b");
+			break;
+		default:
+			arquivo = NULL;
+			break;
+
+	}
+
+	return arquivo;
+
+}
+
+FILE* abreArquivoTransferencia(char modo) {
+
+	FILE *arquivo;
+	char caminho [30] = "transferencias.txt";
+	switch (modo) {
+
+		case 'w'://Escrever
+			arquivo = fopen(caminho,"wb");
+			break;
+		case 'r'://Ler
+			arquivo = fopen(caminho,"rb");
+			break;
+		case 'a'://Append
+			arquivo = fopen(caminho,"ab");
+			break;
+		case 'f':
+			arquivo = fopen(caminho, "r+b");
+			break;
+		default:
+			arquivo = NULL;
+			break;
+
+	}
+
 
 	return arquivo;
 
