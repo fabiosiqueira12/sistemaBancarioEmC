@@ -60,6 +60,7 @@ typedef struct SPessoa {
 FILE *file;
 FILE *fileExtrato;
 TPessoa pessoaLogada;
+char senhaAdmin[6] = "admin";
 
 /* Fim Declaração váriaveis globais */
 
@@ -71,6 +72,7 @@ void acessarSistema();
 void sair();
 void menuDeAcesso(TPessoa pessoa);
 void loginSistema();
+void adminAcesso();
 void menuMais(TPessoa pessoa);
 
 //Função de CRUD
@@ -182,7 +184,7 @@ void acessarSistema() {
 			loginSistema();
 			break;
 		case 2:
-			cadastrarUsuario();
+			adminAcesso();
 			break;
 		case 3:
 			depositoAnonimo();
@@ -197,6 +199,46 @@ void acessarSistema() {
 			break;
 	}
 
+}
+
+//Função Que Verifica Admin
+void adminAcesso(){
+	char senha[6];
+	int numeroTentativas = 3;
+	system("cls");
+	system("color 3f");
+	
+	int j;
+	for (j = 0; j < numeroTentativas ; j++) {
+		printf("\n\n Número de tentativas: %i, Resta:  %i \n\n",(j),numeroTentativas - (j));
+		printf("\n\nDigite a senha do admin: ");
+		fflush(stdin);
+		gets(senha);
+		
+		if (strlen(senha) == 0 ){
+			printf("\n Digite Algo Para A Senha \n");
+			system("pause");
+			system("cls");
+		}else{
+			
+			if (strcmp(senha,senhaAdmin) == 0){
+				cadastrarUsuario();
+				break;
+			}else {
+				printf("\n Senha Inválida \n");
+				system("pause");
+				system("cls");
+			}
+			
+		}
+		
+		
+	}
+	
+	printf("\nQuantidade de tentativas Esgotadas, Tente Novamente \n");
+	system("pause");
+	acessarSistema();
+	
 }
 
 //Função Para Verificar Se Conta Existe
